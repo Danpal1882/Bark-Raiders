@@ -13,12 +13,26 @@
   const modal = document.getElementById('creatorModal');
   const card = modal?.querySelector('.modal-card');
   const closeButton = document.getElementById('closeCreatorBtn');
-  const title = document.getElementById('creatorModalTitle');
-  const intro = document.getElementById('creatorModalIntro');
+  const title = document.getElementById('creatorModalTitle') || modal?.querySelector('h2');
+  let intro = document.getElementById('creatorModalIntro');
   const originalCreateButton = document.getElementById('createRaiderModalBtn');
-  const validation = document.getElementById('creatorValidation');
+  let validation = document.getElementById('creatorValidation');
 
   if(!modal || !card || !originalCreateButton) return;
+
+  if(!intro && title){
+    intro = document.createElement('p');
+    intro.id = 'creatorModalIntro';
+    intro.className = 'muted creator-modal-intro';
+    title.insertAdjacentElement('afterend', intro);
+  }
+  if(!validation){
+    validation = document.createElement('p');
+    validation.id = 'creatorValidation';
+    validation.className = 'creator-validation hidden';
+    validation.setAttribute('role', 'alert');
+    card.querySelector('.dispatch-actions')?.insertAdjacentElement('beforebegin', validation);
+  }
 
   const style = document.createElement('style');
   style.textContent = `
