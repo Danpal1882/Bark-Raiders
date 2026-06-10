@@ -43,6 +43,19 @@
           <label for="zoneSelect">Zone</label>
           <select id="zoneSelect"></select>
         </div>
+        <div class="form-row">
+          <label for="planSelect">Raid Plan</label>
+          <select id="planSelect"></select>
+        </div>
+        <div class="form-row">
+          <label for="dogSelect">Raider</label>
+          <select id="dogSelect"></select>
+        </div>
+        <div class="form-row">
+          <label>Loot Filter</label>
+          <div id="lootFilter" class="loot-filter"></div>
+          <p class="muted tiny">Tick the resources you want this raid. Unticked resources will usually be ignored unless they are ammo or needed for survival.</p>
+        </div>
         <div class="controls">
           <button id="startBtn">Start Raid</button>
           <button id="returnBtn" disabled>Extract</button>
@@ -87,6 +100,8 @@
         <div id="map" class="map"></div>
         <div class="legend">
           <span><img src="assets/tile-crate.svg" alt=""> Loot</span>
+          <span><img src="assets/tile-tree.svg" alt=""> Trees</span>
+          <span><img src="assets/tile-grove.svg" alt=""> Grove</span>
           <span><img src="assets/tile-scrap.svg" alt=""> Scrap</span>
           <span><img src="assets/tile-medical.svg" alt=""> Medical</span>
           <span><img src="assets/tile-event.svg" alt=""> Event</span>
@@ -134,10 +149,35 @@
       </div>
     </section>
 
+    <section class="panel kennel-panel">
+      <div class="panel-title-row">
+        <h2>Kennel Base</h2>
+        <span class="muted small">Stations upgrade visually as they level up.</span>
+      </div>
+      <div id="kennelBase" class="kennel-base"></div>
+    </section>
+
+    <section id="choicePanel" class="panel choice-panel hidden">
+      <h2>Map Event Choice</h2>
+      <p id="choiceText" class="muted"></p>
+      <div id="choiceButtons" class="choice-buttons"></div>
+    </section>
+
     <section class="bottom-grid">
+      <article class="panel">
+        <h2>Pack Manager</h2>
+        <p class="muted tiny">Drop unwanted resource stacks mid-raid to free inventory slots and keep pushing for the boss.</p>
+        <div id="packManager" class="pack-manager"></div>
+      </article>
+
       <article class="panel">
         <h2>Raid Loot</h2>
         <div id="raidLootGrid" class="resources"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Equipped Gear</h2>
+        <div id="equipmentGrid" class="gear-grid"></div>
       </article>
 
       <article class="panel">
