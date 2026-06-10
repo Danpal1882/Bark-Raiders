@@ -3,32 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bark Raiders v0.3</title>
+  <title>Bark Raiders v0.16</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="app">
-    <header class="hero panel">
+  <main class="app compact-app">
+    <header class="hero panel compact-hero">
       <div class="hero-copy">
         <p class="eyebrow">Idle scavenger survival prototype</p>
         <h1>Bark Raiders</h1>
-        <p class="subtitle">Lead Mochi the Shiba raider through ruined zones, loot survival supplies, fight enemies with upgradeable gear, extract before disaster, and build the kennel into a proper wasteland base.</p>
-        <div class="tag-row">
-          <span class="tag">Random map</span>
-          <span class="tag">Tile sprites</span>
-          <span class="tag">Weather modifiers</span>
-          <span class="tag">Weapon tiers</span>
-          <span class="tag">Boss progression</span>
-          <span class="tag">Extraction risk</span>
-        </div>
+        <p class="subtitle">Dungeon raids, roaming enemies, contracts, traders, gear, perks, and one very determined dog.</p>
       </div>
-      <div class="hero-card">
+      <div class="hero-card compact-dog-card">
         <img id="heroDogSprite" class="hero-sprite bounce" src="assets/shiba-raider.svg" alt="Main dog sprite" />
         <div>
           <strong id="dogName">Mochi</strong>
           <p id="dogBreedText">Breed: Shiba Inu Raider</p>
           <p id="gearSummary">Starter gear: Pistol + Scrap Vest</p>
-          <p class="muted tiny">Pomeranian alt sprite is included for future skins/raider slots.</p>
         </div>
       </div>
     </header>
@@ -41,67 +32,70 @@
       <p id="offlineText" class="muted"></p>
     </section>
 
-    <section class="top-grid">
-      <article class="panel">
+    <section class="dashboard-grid">
+      <aside class="panel setup-panel">
         <div class="panel-title-row">
-          <h2>Raid Controls</h2>
+          <h2>Raid Setup</h2>
           <span id="raidTimer" class="pill">00:00</span>
         </div>
-        <div class="form-row">
-          <label for="zoneSelect">Zone</label>
-          <select id="zoneSelect"></select>
+
+        <div class="compact-fields">
+          <div class="form-row">
+            <label for="zoneSelect">Zone</label>
+            <select id="zoneSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="planSelect">Plan</label>
+            <select id="planSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="dogSelect">Raider</label>
+            <select id="dogSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="contractSelect">Contract</label>
+            <select id="contractSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="extractSelect">Auto-Extract</label>
+            <select id="extractSelect">
+              <option value="off">Off</option>
+              <option value="safe">Safe: HP below 45% or threat over 75%</option>
+              <option value="balanced">Balanced: HP below 35% or threat over 85%</option>
+              <option value="greedy">Greedy: HP below 25% or threat over 95%</option>
+              <option value="pack">Pack Full</option>
+              <option value="boss">After Boss Objective</option>
+            </select>
+          </div>
         </div>
-        <div class="form-row">
-          <label for="planSelect">Raid Plan</label>
-          <select id="planSelect"></select>
-        </div>
-        <div class="form-row">
-          <label for="dogSelect">Raider</label>
-          <select id="dogSelect"></select>
-        </div>
-        <div class="form-row">
-          <label>Loot Filter</label>
-          <div id="lootFilter" class="loot-filter"></div>
-          <p class="muted tiny">Tick the resources you want this raid. Unticked resources will usually be ignored unless they are ammo or needed for survival.</p>
-        </div>
-        <div class="controls">
-          <button id="startBtn">Start Raid</button>
+
+        <div class="controls compact-controls">
+          <button id="startBtn">Start</button>
           <button id="returnBtn" disabled>Extract</button>
           <button id="autoBtn" class="ghost">Auto-Raid: Off</button>
           <button id="autoExtractBtn" class="ghost">Auto-Extract: Off</button>
-          <button id="resetBtn" class="ghost">Reset Save</button>
+          <button id="resetBtn" class="ghost">Reset</button>
         </div>
-        <div class="form-row">
-          <label for="extractSelect">Auto-Extract Rule</label>
-          <select id="extractSelect">
-            <option value="off">Off</option>
-            <option value="safe">Safe: HP below 45% or threat over 75%</option>
-            <option value="balanced">Balanced: HP below 35% or threat over 85%</option>
-            <option value="greedy">Greedy: HP below 25% or threat over 95%</option>
-            <option value="pack">Pack Full</option>
-            <option value="boss">After Boss Objective</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label for="contractSelect">Contract</label>
-          <select id="contractSelect"></select>
-        </div>
-        <div class="form-row">
-          <label>Consumables</label>
+
+        <details class="compact-details" open>
+          <summary>Consumables</summary>
           <div id="consumableSetup" class="consumable-setup"></div>
-          <p class="muted tiny">Choose up to 2 consumables to take into the raid.</p>
-        </div>
-        <div class="status-box">
+          <p class="muted tiny">Choose up to 2. Hover/focus for what each one does.</p>
+        </details>
+
+        <details class="compact-details">
+          <summary>Loot Filter</summary>
+          <div id="lootFilter" class="loot-filter"></div>
+        </details>
+
+        <div class="status-box compact-status">
           <p><strong>Status:</strong> <span id="statusText">Resting at the kennel.</span></p>
           <p><strong>Weather:</strong> <span id="weatherText">None</span></p>
-          <p><strong>Raid Modifier:</strong> <span id="modifierText">None</span></p>
+          <p><strong>Modifier:</strong> <span id="modifierText">None</span></p>
           <p><strong>Threat:</strong> <span id="threatText">0%</span></p>
         </div>
-      </article>
 
-      <article class="panel">
-        <h2>Raider Stats</h2>
-        <div class="bars">
+        <div class="bars compact-bars">
           <label>Health <span id="hpText"></span></label>
           <div class="bar"><span id="hpBar"></span></div>
           <label>Carry <span id="carryText"></span></label>
@@ -111,43 +105,35 @@
           <label>XP <span id="xpText"></span></label>
           <div class="bar"><span id="xpBar" class="xp"></span></div>
         </div>
-        <div id="statGrid" class="stat-grid"></div>
-      </article>
+        <div id="statGrid" class="stat-grid compact-stat-grid"></div>
+      </aside>
 
-      <article class="panel">
-        <h2>Gear & Pack</h2>
-        <div id="gearGrid" class="gear-grid"></div>
-      </article>
-    </section>
-
-    <section class="main-grid">
-      <article class="panel map-panel">
-        <div class="panel-title-row">
-          <h2>Raid Map</h2>
-          <span id="mapSummary" class="muted small">Explore the zone for loot and the boss.</span>
-        </div>
-        <div id="map" class="map"></div>
-        <div class="legend">
-          <span><img src="assets/tile-crate.svg" alt=""> Loot</span>
-          <span><img src="assets/tile-tree.svg" alt=""> Trees</span>
-          <span><img src="assets/tile-grove.svg" alt=""> Grove</span>
-          <span><img src="assets/tile-scrap.svg" alt=""> Scrap</span>
-          <span><img src="assets/tile-medical.svg" alt=""> Medical</span>
-          <span><img src="assets/tile-event.svg" alt=""> Event</span>
-          <span><img src="assets/tile-boss.svg" alt=""> Boss</span>
-        </div>
-      </article>
-
-      <div class="side-stack">
-        <article id="choicePanel" class="panel choice-panel hidden">
-        <h2>Raid Prompt</h2>
-        <p id="choiceText" class="muted"></p>
-        <div id="choiceButtons" class="choice-buttons"></div>
-      </article>
-
-      <article class="panel combat-panel">
+      <section class="map-column">
+        <article class="panel map-panel dashboard-map-panel">
           <div class="panel-title-row">
-            <h2>Combat View</h2>
+            <h2>Dungeon Map</h2>
+            <span id="mapSummary" class="muted small">Explore the zone for loot and the boss.</span>
+          </div>
+          <div id="map" class="map"></div>
+          <div class="legend compact-legend">
+            <span><img src="assets/tile-crate.svg" alt=""> Loot</span>
+            <span><img src="assets/tile-tree.svg" alt=""> Trees</span>
+            <span><img src="assets/tile-scrap.svg" alt=""> Scrap</span>
+            <span><img src="assets/tile-medical.svg" alt=""> Meds</span>
+            <span><img src="assets/tile-trader.svg" alt=""> Trader</span>
+            <span><img src="assets/tile-boss.svg" alt=""> Boss</span>
+          </div>
+        </article>
+
+        <article id="choicePanel" class="panel choice-panel hidden">
+          <h2>Raid Prompt</h2>
+          <p id="choiceText" class="muted"></p>
+          <div id="choiceButtons" class="choice-buttons"></div>
+        </article>
+
+        <article class="panel combat-panel compact-combat">
+          <div class="panel-title-row">
+            <h2>Combat</h2>
             <span id="combatState" class="pill muted-pill">Roaming</span>
           </div>
           <div class="combat-stage">
@@ -158,9 +144,7 @@
               <div class="bar mini"><span id="combatDogHpBar"></span></div>
               <span id="combatDogHpText" class="muted small">38 / 38 HP</span>
             </div>
-
             <div class="versus">VS</div>
-
             <div class="fighter-card enemy">
               <img id="enemySprite" class="combat-sprite enemy-idle" src="assets/rat-bandit.svg" alt="Enemy sprite" />
               <strong id="enemyName">No target</strong>
@@ -171,84 +155,78 @@
           </div>
           <p id="encounterText" class="encounter-text muted">No encounter active.</p>
         </article>
+      </section>
 
-        <article class="panel">
-          <h2>Kennel Stores</h2>
+      <aside class="panel right-panel">
+        <h2>Raid Dashboard</h2>
+
+        <details class="compact-details" open>
+          <summary>Active Contract</summary>
+          <div id="contractStatus" class="gear-grid"></div>
+        </details>
+
+        <details class="compact-details" open>
+          <summary>Raid Loot</summary>
+          <div id="raidLootGrid" class="resources"></div>
+        </details>
+
+        <details class="compact-details">
+          <summary>Pack Manager</summary>
+          <p class="muted tiny">Drop unwanted stacks mid-raid.</p>
+          <div id="packManager" class="pack-manager"></div>
+        </details>
+
+        <details class="compact-details" open>
+          <summary>Kennel Stores</summary>
           <div id="resources" class="resources"></div>
-        </article>
+        </details>
 
-        <article class="panel">
-          <h2>Kennel Stations</h2>
-          <div id="upgrades" class="upgrades"></div>
-        </article>
-      </div>
+        <details class="compact-details">
+          <summary>Gear & Equipment</summary>
+          <div id="gearGrid" class="gear-grid"></div>
+          <hr>
+          <div id="equipmentGrid" class="gear-grid"></div>
+          <div id="inventoryGrid" class="gear-grid"></div>
+        </details>
+
+        <details class="compact-details">
+          <summary>Raid Log</summary>
+          <div id="log" class="log"></div>
+        </details>
+      </aside>
     </section>
 
-    <section class="panel kennel-panel">
-      <div class="panel-title-row">
-        <h2>Kennel Base</h2>
-        <span class="muted small">Stations upgrade visually as they level up.</span>
-      </div>
-      <div id="kennelBase" class="kennel-base"></div>
-    </section>
+    <section class="admin-drawer">
+      <details class="panel compact-details">
+        <summary>Kennel Base</summary>
+        <div id="kennelBase" class="kennel-base"></div>
+      </details>
 
-    <section class="panel hub-trader-panel">
-      <div class="panel-title-row">
-        <h2>Hub Trader</h2>
-        <span class="muted small">Always available at the kennel, but never cheap.</span>
-      </div>
-      <div id="hubTraderGrid" class="upgrades"></div>
-    </section>
+      <details class="panel compact-details">
+        <summary>Hub Trader</summary>
+        <div id="hubTraderGrid" class="upgrades"></div>
+      </details>
 
-    <section class="systems-grid">
-      <article class="panel">
-        <h2>Active Contract</h2>
-        <div id="contractStatus" class="gear-grid"></div>
-      </article>
+      <details class="panel compact-details">
+        <summary>Kennel Stations</summary>
+        <div id="upgrades" class="upgrades"></div>
+      </details>
 
-      <article class="panel">
-        <h2>Noticeboard Quests</h2>
+      <details class="panel compact-details">
+        <summary>Noticeboard Quests</summary>
         <div id="questGrid" class="upgrades"></div>
-      </article>
+      </details>
 
-      <article class="panel">
-        <h2>Dog Treat Perks</h2>
+      <details class="panel compact-details">
+        <summary>Dog Treat Perks</summary>
         <p class="muted tiny">Treats come from bosses, quests, and offline scavenging.</p>
         <div id="perkGrid" class="upgrades"></div>
-      </article>
+      </details>
 
-      <article class="panel">
-        <h2>Equipment Inventory</h2>
-        <div id="inventoryGrid" class="gear-grid"></div>
-      </article>
-    </section>
-
-    <section class="bottom-grid">
-      <article class="panel">
-        <h2>Pack Manager</h2>
-        <p class="muted tiny">Drop unwanted resource stacks mid-raid to free inventory slots and keep pushing for the boss.</p>
-        <div id="packManager" class="pack-manager"></div>
-      </article>
-
-      <article class="panel">
-        <h2>Raid Loot</h2>
-        <div id="raidLootGrid" class="resources"></div>
-      </article>
-
-      <article class="panel">
-        <h2>Equipped Gear</h2>
-        <div id="equipmentGrid" class="gear-grid"></div>
-      </article>
-
-      <article class="panel">
-        <h2>Research & Unlocks</h2>
+      <details class="panel compact-details">
+        <summary>Research & Unlocks</summary>
         <div id="researchGrid" class="upgrades"></div>
-      </article>
-
-      <article class="panel log-panel">
-        <h2>Raid Log</h2>
-        <div id="log" class="log"></div>
-      </article>
+      </details>
     </section>
   </main>
 

@@ -1,100 +1,56 @@
-# Bark Raiders v0.15
+# Bark Raiders v0.16
 
 Static GitHub Pages prototype.
 
-## What changed from v0.14
+## What changed from v0.15
 
-### Properer dungeon generator
+### Cleaner one-screen UI
 
-The dungeon generator is now more like a proper room layout:
+The long stacked page has been consolidated into a tighter dashboard.
 
-- rectangular rooms
-- room sizes
-- room outlines
-- corridor links
-- guaranteed connected dungeon
-- extra loop corridors
-- entrance room
-- boss den
-- biome-specific room names
-- biome-specific hazards
-- locked rooms
-- key rooms
-- force-open resource checks
+Main play now sits in three columns:
 
-This is still rendered with HTML/CSS so it stays GitHub Pages friendly, but the generation is much closer to a procedural dungeon than the previous node map.
+- left: raid setup, controls, consumables, loot filter, status, stats
+- centre: dungeon map, raid prompt, combat view
+- right: contract, raid loot, pack manager, stores, gear, log
 
-### Room hazards
+Lower admin systems are tucked into compact collapsible drawers:
 
-Rooms can now have hazards:
+- kennel base
+- hub trader
+- kennel stations
+- quests
+- perks
+- research
 
-- Flooded
-- Dark
-- Overgrown
-- Collapsing
-- Locked
-- Infested
+This should make the game feel much less like a giant debug page and more like a playable dashboard.
 
-Hazards can affect threat, HP, loot, ambush chance, or access.
+### Consumable tooltips
 
-### Locked rooms and keys
+Consumables now explain what they do directly in the UI.
 
-Some rooms can be locked.
+Each consumable has:
+- native mouseover title text
+- styled hover/focus tooltip
+- clearer setup area
 
-The dog can:
-- find dungeon keys in key rooms
-- use a key to unlock a room
-- force open some locked rooms using raid loot/resources
-- skip the room if it cannot be opened
+### Existing systems retained
 
-### Contracts
-
-Added pre-raid contracts:
-
-- No Contract
-- Wood Recovery
-- Pest Control
-- Trader Escort
-- Boss Bounty
-- Supply Rescue
-- Silent Run
-
-Contracts track raid progress and pay out resources/treats if completed.
-
-### Consumables
-
-Choose up to two consumables before a raid:
-
-- Smoke Biscuit
-- Squeaky Decoy
-- Emergency Medkit
-- Lucky Treat
-- Trader Token
-- Map Scrap
-
-Consumables give one-off raid effects.
-
-### Other fixes
-
-- Factory metal rooms now use scrap tile art instead of appearing blank.
-- Smoke Biscuit avoiding an enemy room now clears that room so the dog does not loop forever.
-
-## Existing systems retained
-
+- proper dungeon generator
+- contracts
+- consumables
+- hazards
+- locked rooms and keys
 - auto-extract fix
 - hub trader
 - locked dog roster
-- map-adjacent raid prompts
-- quest baseline tracking
-- biome bosses
-- biome/trader assets
+- biome bosses/assets
 - offline progress
 - perks
 - equipment inventory
 - loot filters
 - pack manager
 - roaming enemies
-- event choices
 
 ## Upload to GitHub Pages
 

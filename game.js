@@ -1606,9 +1606,10 @@ function renderConsumableSetup(){
   $('consumableSetup').innerHTML = Object.entries(CONSUMABLES).map(([id,c]) => {
     const checked = state.selectedConsumables.includes(id);
     const disabled = !checked && state.selectedConsumables.length >= 2;
-    return `<label class="consumable-chip">
+    return `<label class="consumable-chip" title="${c.name}: ${c.desc}">
       <input type="checkbox" ${checked?'checked':''} ${disabled?'disabled':''} onchange="toggleConsumable('${id}')">
       <span>${c.icon} ${c.name}</span>
+      <span class="consumable-help"><strong>${c.icon} ${c.name}</strong>${c.desc}</span>
     </label>`;
   }).join('');
 }
@@ -1815,7 +1816,7 @@ load();
 applyUpgrades(); updateGear(); generateMap();
 ensureLootFilter();
 ensureQuests();
-log('Welcome to Bark Raiders v0.15. Proper dungeon generator, contracts, consumables, hazards, locked rooms, and keys are in.');
+log('Welcome to Bark Raiders v0.16. Cleaner one-screen dashboard and consumable tooltips are in.');
 log('Tip: set Auto-Extract to Balanced for normal raids, or Boss Hunt + After Boss Objective for boss attempts.');
 render();
 showOfflineReward();
