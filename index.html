@@ -18,7 +18,7 @@
         return response.text();
       })
       .then(html => {
-        const onboarding = '<script src="founder-onboarding.js"><\\/script>';
+        const onboarding = '<script src="founder-onboarding.js"><\/script>';
         document.open();
         document.write(html.replace('</body>', onboarding + '</body>'));
         document.close();
