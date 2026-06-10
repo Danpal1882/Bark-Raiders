@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bark Raiders v0.3</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="hero panel">
+      <div class="hero-copy">
+        <p class="eyebrow">Idle scavenger survival prototype</p>
+        <h1>Bark Raiders</h1>
+        <p class="subtitle">Lead Mochi the Shiba raider through ruined zones, loot survival supplies, fight enemies with upgradeable gear, extract before disaster, and build the kennel into a proper wasteland base.</p>
+        <div class="tag-row">
+          <span class="tag">Random map</span>
+          <span class="tag">Tile sprites</span>
+          <span class="tag">Weather modifiers</span>
+          <span class="tag">Weapon tiers</span>
+          <span class="tag">Boss progression</span>
+          <span class="tag">Extraction risk</span>
+        </div>
+      </div>
+      <div class="hero-card">
+        <img id="heroDogSprite" class="hero-sprite bounce" src="assets/shiba-raider.svg" alt="Main dog sprite" />
+        <div>
+          <strong id="dogName">Mochi</strong>
+          <p id="dogBreedText">Breed: Shiba Inu Raider</p>
+          <p id="gearSummary">Starter gear: Pistol + Scrap Vest</p>
+          <p class="muted tiny">Pomeranian alt sprite is included for future skins/raider slots.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="top-grid">
+      <article class="panel">
+        <div class="panel-title-row">
+          <h2>Raid Controls</h2>
+          <span id="raidTimer" class="pill">00:00</span>
+        </div>
+        <div class="form-row">
+          <label for="zoneSelect">Zone</label>
+          <select id="zoneSelect"></select>
+        </div>
+        <div class="controls">
+          <button id="startBtn">Start Raid</button>
+          <button id="returnBtn" disabled>Extract</button>
+          <button id="autoBtn" class="ghost">Auto-Raid: Off</button>
+          <button id="resetBtn" class="ghost">Reset Save</button>
+        </div>
+        <div class="status-box">
+          <p><strong>Status:</strong> <span id="statusText">Resting at the kennel.</span></p>
+          <p><strong>Weather:</strong> <span id="weatherText">None</span></p>
+          <p><strong>Raid Modifier:</strong> <span id="modifierText">None</span></p>
+          <p><strong>Threat:</strong> <span id="threatText">0%</span></p>
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2>Raider Stats</h2>
+        <div class="bars">
+          <label>Health <span id="hpText"></span></label>
+          <div class="bar"><span id="hpBar"></span></div>
+          <label>Carry <span id="carryText"></span></label>
+          <div class="bar"><span id="carryBar" class="carry"></span></div>
+          <label>Ammo <span id="ammoText"></span></label>
+          <div class="bar"><span id="ammoBar" class="ammo"></span></div>
+          <label>XP <span id="xpText"></span></label>
+          <div class="bar"><span id="xpBar" class="xp"></span></div>
+        </div>
+        <div id="statGrid" class="stat-grid"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Gear & Pack</h2>
+        <div id="gearGrid" class="gear-grid"></div>
+      </article>
+    </section>
+
+    <section class="main-grid">
+      <article class="panel map-panel">
+        <div class="panel-title-row">
+          <h2>Raid Map</h2>
+          <span id="mapSummary" class="muted small">Explore the zone for loot and the boss.</span>
+        </div>
+        <div id="map" class="map"></div>
+        <div class="legend">
+          <span><img src="assets/tile-crate.svg" alt=""> Loot</span>
+          <span><img src="assets/tile-scrap.svg" alt=""> Scrap</span>
+          <span><img src="assets/tile-medical.svg" alt=""> Medical</span>
+          <span><img src="assets/tile-event.svg" alt=""> Event</span>
+          <span><img src="assets/tile-boss.svg" alt=""> Boss</span>
+        </div>
+      </article>
+
+      <div class="side-stack">
+        <article class="panel combat-panel">
+          <div class="panel-title-row">
+            <h2>Combat View</h2>
+            <span id="combatState" class="pill muted-pill">Roaming</span>
+          </div>
+          <div class="combat-stage">
+            <div class="fighter-card ally">
+              <img id="combatDogSprite" class="combat-sprite bounce" src="assets/shiba-raider.svg" alt="Dog sprite" />
+              <strong id="combatDogName">Mochi</strong>
+              <span id="combatDogRole" class="muted small">Shiba Inu Raider</span>
+              <div class="bar mini"><span id="combatDogHpBar"></span></div>
+              <span id="combatDogHpText" class="muted small">38 / 38 HP</span>
+            </div>
+
+            <div class="versus">VS</div>
+
+            <div class="fighter-card enemy">
+              <img id="enemySprite" class="combat-sprite enemy-idle" src="assets/rat-bandit.svg" alt="Enemy sprite" />
+              <strong id="enemyName">No target</strong>
+              <span id="enemyType" class="muted small">Wandering the zone</span>
+              <div class="bar mini"><span id="enemyHpBar" class="enemy-bar"></span></div>
+              <span id="enemyHpText" class="muted small">--</span>
+            </div>
+          </div>
+          <p id="encounterText" class="encounter-text muted">No encounter active.</p>
+        </article>
+
+        <article class="panel">
+          <h2>Kennel Stores</h2>
+          <div id="resources" class="resources"></div>
+        </article>
+
+        <article class="panel">
+          <h2>Kennel Stations</h2>
+          <div id="upgrades" class="upgrades"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="bottom-grid">
+      <article class="panel">
+        <h2>Raid Loot</h2>
+        <div id="raidLootGrid" class="resources"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Research & Unlocks</h2>
+        <div id="researchGrid" class="upgrades"></div>
+      </article>
+
+      <article class="panel log-panel">
+        <h2>Raid Log</h2>
+        <div id="log" class="log"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
