@@ -1,62 +1,84 @@
-# Bark Raiders v0.8
+# Bark Raiders v0.12
 
 Static GitHub Pages prototype.
 
-## What changed from v0.7
+## What changed from v0.11
 
-### Boss-run fix
-The game no longer auto-extracts immediately on full pack during Boss Hunt.
+### More bosses
 
-Before:
-- Pack full = forced extraction
-- This could prevent ever reaching the boss
+Bosses are now selected from biome-specific boss pools rather than one fixed boss per zone.
 
-Now:
-- Boss Hunt keeps going when the pack is full
-- Extra loot is ignored or swapped depending on filters and priority
-- The dog can still push towards the boss objective
+#### Ruined City bosses
+- Rat King
+- Crow Baron
+- Alley Butcher
 
-### Loot filters
-You can now choose which resources the dog should look for before and during a raid:
+#### Sewer bosses
+- Gutter Maw
+- Drain Queen
+- Mouldback Raccoon
 
-- Food
-- Water
-- Wood
-- Metal
-- Fabric
-- Medicine
-- Gun Parts
+#### Factory bosses
+- Alpha Hound
+- Geargrinder Raccoon
+- Furnace Stray
 
-Ammo is always allowed because it is combat fuel and does not use normal inventory slots.
+#### Farmland bosses
+- Trolley Tyrant
+- Barnstorm Crow
+- Old Yard Dog
 
-Unticked resources are generally ignored, which is ideal for:
-- Wood Run
-- Scrap Run
-- Medical Run
-- Boss Hunt with low-priority loot disabled
+Bosses now scale slightly by zone and have different mechanics, including:
+- summons
+- loot stealing
+- bleed damage
+- poison/filth pressure
+- armour checks
+- hazards
+- furnace burn damage
 
-### Pack Manager
-A new Pack Manager panel lets you drop loot during a raid:
+### Traders
 
-- Drop 1
-- Drop stack
+Trader rooms now appear in generated dungeons.
 
-This frees inventory slots and carry weight so you can continue the raid.
+Traders sell expensive items using your kennel resources:
 
-### Auto-swap behaviour
-If the dog finds wanted loot but inventory is full:
-- it tries to drop an unwanted or lower-priority stack
-- then picks up the wanted item
+- med packs
+- wood bundles
+- gun parts
+- ammo boxes
+- mystery weapon crates
+- biome-specific goods such as clean water, factory scrap, or farm supplies
 
-This makes inventory management less frustrating while keeping the slot/carry system meaningful.
+Prices are deliberately high so traders feel useful but not free value.
 
-## Recommended boss setup
+### Biome assets
 
-For boss attempts:
-- Raid Plan: Boss Hunt
-- Untick low-priority loot like food/water/fabric
-- Keep wood/metal/gun parts/medicine depending on what you need
-- Use Pack Manager if the dog picks up junk
+Added dedicated SVG assets for:
+
+- Ruined City
+- Sewer
+- Factory
+- Farmland
+- Trader rooms
+
+The map now shows a biome badge using the new biome asset.
+
+### Existing systems retained
+
+- room-and-corridor dungeon generation
+- biome loot bias
+- Jack Russell named Rustle
+- auto-extract
+- offline progress
+- quests
+- perks
+- equipment inventory
+- loot filters
+- pack manager
+- roaming enemies
+- boss pathing
+- event choices
 
 ## Upload to GitHub Pages
 
@@ -76,8 +98,8 @@ Then GitHub:
 
 ## Save data
 
-This version uses:
+This version keeps the v0.9 save key:
 
-`barkRaidersSaveV8`
+`barkRaidersSaveV9`
 
-It will attempt to load v0.7 saves as a fallback.
+It remains compatible with the recent v0.9-v0.11 saves.

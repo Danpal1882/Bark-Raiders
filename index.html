@@ -33,6 +33,14 @@
       </div>
     </header>
 
+    <section id="offlinePanel" class="panel offline-panel hidden">
+      <div class="panel-title-row">
+        <h2>While You Were Away</h2>
+        <button id="claimOfflineBtn">Claim</button>
+      </div>
+      <p id="offlineText" class="muted"></p>
+    </section>
+
     <section class="top-grid">
       <article class="panel">
         <div class="panel-title-row">
@@ -60,7 +68,19 @@
           <button id="startBtn">Start Raid</button>
           <button id="returnBtn" disabled>Extract</button>
           <button id="autoBtn" class="ghost">Auto-Raid: Off</button>
+          <button id="autoExtractBtn" class="ghost">Auto-Extract: Off</button>
           <button id="resetBtn" class="ghost">Reset Save</button>
+        </div>
+        <div class="form-row">
+          <label for="extractSelect">Auto-Extract Rule</label>
+          <select id="extractSelect">
+            <option value="off">Off</option>
+            <option value="safe">Safe: HP below 45% or threat over 75%</option>
+            <option value="balanced">Balanced: HP below 35% or threat over 85%</option>
+            <option value="greedy">Greedy: HP below 25% or threat over 95%</option>
+            <option value="pack">Pack Full</option>
+            <option value="boss">After Boss Objective</option>
+          </select>
         </div>
         <div class="status-box">
           <p><strong>Status:</strong> <span id="statusText">Resting at the kennel.</span></p>
@@ -161,6 +181,24 @@
       <h2>Map Event Choice</h2>
       <p id="choiceText" class="muted"></p>
       <div id="choiceButtons" class="choice-buttons"></div>
+    </section>
+
+    <section class="systems-grid">
+      <article class="panel">
+        <h2>Noticeboard Quests</h2>
+        <div id="questGrid" class="upgrades"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Dog Treat Perks</h2>
+        <p class="muted tiny">Treats come from bosses, quests, and offline scavenging.</p>
+        <div id="perkGrid" class="upgrades"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Equipment Inventory</h2>
+        <div id="inventoryGrid" class="gear-grid"></div>
+      </article>
     </section>
 
     <section class="bottom-grid">
