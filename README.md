@@ -1,56 +1,95 @@
-# Bark Raiders v0.16
+# Bark Raiders v0.25
 
 Static GitHub Pages prototype.
 
-## What changed from v0.15
+## What changed from v0.24
 
-### Cleaner one-screen UI
+### Dedicated Market tab
+Added a proper Market tab separate from the kennel drawer.
 
-The long stacked page has been consolidated into a tighter dashboard.
+The market now has:
+- named traders
+- trader detail panel
+- trader stock panel
+- faction reputation
+- reputation-based discounts
 
-Main play now sits in three columns:
+### Named traders
+Added four named traders:
 
-- left: raid setup, controls, consumables, loot filter, status, stats
-- centre: dungeon map, raid prompt, combat view
-- right: contract, raid loot, pack manager, stores, gear, log
+- Milo the Mule — bulk resources
+- Patch the Surgeon — medicine and recovery
+- Bolt the Badger — gun parts, ammo, and metal
+- Rook the Crow — rare charms and black-market intel
 
-Lower admin systems are tucked into compact collapsible drawers:
+### Faction reputation consequences
+Market and boss actions now affect faction influence.
 
-- kennel base
-- hub trader
-- kennel stations
-- quests
-- perks
-- research
+Factions:
+- Scav Traders
+- Kennel Union
+- Rat Court
+- Crow Syndicate
+- Rustclaw Crew
 
-This should make the game feel much less like a giant debug page and more like a playable dashboard.
+Higher trader reputation improves prices. Boss defeats affect faction influence.
 
-### Consumable tooltips
+### Boss dialogue
+Boss fights now add intro dialogue based on their mechanics.
 
-Consumables now explain what they do directly in the UI.
+Boss defeats also add faction aftermath lines.
 
-Each consumable has:
-- native mouseover title text
-- styled hover/focus tooltip
-- clearer setup area
+### Better Auto-Raid profile controls
+Added quick profile buttons:
 
-### Existing systems retained
+- Farm Wood
+- Push Floor
+- Boss Hunt
+- Safe XP
+- Trader Run
 
-- proper dungeon generator
+These automatically adjust:
+- floor
+- plan
+- contract
+- auto-extract
+- loot filter priorities
+
+### Kept from v0.24
+- clean character creator modal
+- world map
+- custom dog visual variants
+- faction panel
+- create-a-raider roster
+- recovery kennel
+- dispatch profiles
+- market base systems
+- biome mastery
+- bounty board
+- auto-raid from the start
+- pre-dispatch terminal
+- post-raid report
+- floor progression
+- boss floors
 - contracts
 - consumables
+- dungeon generation
 - hazards
-- locked rooms and keys
-- auto-extract fix
-- hub trader
-- locked dog roster
-- biome bosses/assets
-- offline progress
-- perks
-- equipment inventory
-- loot filters
-- pack manager
-- roaming enemies
+- locked rooms / keys
+- history
+- settings
+- save tools
+
+## Suggested v0.26
+Next best pass:
+
+- deeper room events with faction choices
+- trader-specific quests
+- dog bond events
+- boss intro/defeat cut-in cards
+- actual Market buy/sell filters
+- Auto-Raid profile editor modal
+- mobile UI polish
 
 ## Upload to GitHub Pages
 
@@ -70,6 +109,9 @@ Then GitHub:
 
 ## Save data
 
-This version still uses:
-
+Main save key:
 `barkRaidersSaveV9`
+
+Additional meta keys:
+`barkRaidersMetaV23`
+`barkRaidersMetaV25`

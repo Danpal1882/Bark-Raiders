@@ -918,3 +918,411 @@ hr {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* v0.17 floor progression and injury UI */
+#progressStatus .gear span {
+  display: block;
+}
+#floorSelect {
+  font-weight: 800;
+}
+
+
+/* v0.18 tactical polish: tabs, dispatch, intel, history, settings */
+.top-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
+  position: sticky;
+  top: 6px;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.tab-btn {
+  flex: 1;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04);
+  color: var(--muted);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 900;
+}
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(255,217,112,.22), rgba(138,207,127,.12));
+  color: var(--text);
+  border-color: rgba(255,217,112,.36);
+}
+.tab-panel {
+  display: none;
+}
+.tab-panel.active {
+  display: grid;
+}
+.admin-drawer.tab-panel.active {
+  display: grid;
+}
+.intel-panel.tab-panel.active,
+.history-panel.tab-panel.active,
+.settings-panel.tab-panel.active {
+  display: block;
+}
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  background: rgba(5,4,3,.72);
+  backdrop-filter: blur(9px);
+  padding: 16px;
+}
+.modal.hidden {
+  display: none;
+}
+.modal-card {
+  width: min(980px, 96vw);
+  max-height: 90vh;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255,217,112,.14), transparent 24%),
+    linear-gradient(135deg, #1c1510, #0f0c09);
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 22px;
+  box-shadow: 0 28px 90px rgba(0,0,0,.55);
+  padding: 18px;
+}
+.dispatch-grid,
+.intel-grid,
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 10px;
+}
+.dispatch-tile,
+.intel-card,
+.setting-row,
+.history-row {
+  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(255,255,255,.045);
+  border-radius: 14px;
+  padding: 12px;
+}
+.dispatch-tile strong,
+.intel-card strong,
+.setting-row span:first-child,
+.history-row strong {
+  display: block;
+  color: var(--accent);
+  margin-bottom: 5px;
+  font-weight: 950;
+}
+.dispatch-tile span,
+.intel-card span,
+.history-row span {
+  display: block;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.dispatch-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+.intel-card.wide {
+  grid-column: 1 / -1;
+}
+.floor-pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.floor-pips span {
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  color: var(--muted);
+}
+.floor-pips span.unlocked {
+  color: var(--text);
+  border-color: rgba(138,207,127,.32);
+}
+.history-list {
+  display: grid;
+  gap: 8px;
+}
+.history-row.success {
+  border-color: rgba(138,207,127,.24);
+}
+.history-row.fail {
+  border-color: rgba(233,108,96,.28);
+}
+.setting-row {
+  display: grid;
+  gap: 6px;
+}
+.save-box {
+  width: 100%;
+  min-height: 180px;
+  margin-top: 12px;
+  border-radius: 14px;
+  background: rgba(0,0,0,.24);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,.12);
+  padding: 12px;
+  resize: vertical;
+}
+.reduce-motion * {
+  animation: none !important;
+  transition: none !important;
+}
+@media (max-width: 760px) {
+  .top-tabs {
+    overflow-x: auto;
+  }
+  .tab-btn {
+    min-width: 110px;
+  }
+  .dispatch-grid,
+  .intel-grid,
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .dispatch-actions {
+    flex-direction: column;
+  }
+}
+
+
+/* v0.23 create-a-raider, profiles, market, mastery */
+.mini-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+.creator-grid {
+  display: grid;
+  gap: 8px;
+}
+.creator-grid label {
+  display: grid;
+  gap: 4px;
+}
+.creator-grid input,
+.creator-grid select,
+.setting-row select,
+.form-row select {
+  width: 100%;
+}
+.creator-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.roster-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.mini-dog {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.04);
+}
+.mini-dog.large {
+  width: 64px;
+  height: 64px;
+}
+.creator-panel .muted {
+  margin-top: 8px;
+}
+.market-header {
+  border-color: rgba(255,217,112,.28);
+}
+#raiderStatus .gear,
+#progressStatus .gear,
+#contractStatus .gear {
+  align-items: flex-start;
+}
+#bountyBoard,
+#masteryPanel {
+  margin-top: 10px;
+}
+#profileSelect {
+  font-weight: 800;
+}
+@media (max-width: 860px) {
+  .mini-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* v0.24 creator modal, world map, sprite polish */
+.hidden { display: none !important; }
+.mini-title-row {
+  gap: 8px;
+}
+.creator-modal-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.creator-preview {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 10px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 18px;
+  padding: 16px;
+  background: radial-gradient(circle at 50% 20%, rgba(255,217,112,.13), transparent 40%), rgba(255,255,255,.04);
+}
+.creator-preview-sprite {
+  width: 180px;
+  height: 180px;
+  image-rendering: auto;
+  filter: drop-shadow(0 18px 24px rgba(0,0,0,.32));
+}
+.creator-form {
+  display: grid;
+  gap: 10px;
+}
+.creator-form label {
+  display: grid;
+  gap: 5px;
+  font-weight: 900;
+}
+.creator-form input,
+.creator-form select {
+  width: 100%;
+}
+.creator-stat-preview {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+.creator-stat-preview .stat {
+  padding: 10px;
+}
+.world-map-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 12px;
+}
+.world-biome {
+  text-align: left;
+  display: grid;
+  gap: 7px;
+  border-radius: 18px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.11);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,217,112,.12), transparent 35%),
+    rgba(255,255,255,.045);
+  color: var(--text);
+}
+.world-biome:hover,
+.world-biome.active {
+  border-color: rgba(255,217,112,.42);
+  transform: translateY(-1px);
+}
+.world-biome span {
+  color: var(--muted);
+  line-height: 1.25;
+}
+.floor-pips span.boss-floor {
+  border-color: rgba(255,217,112,.45);
+}
+.floor-pips span.locked {
+  opacity: .45;
+}
+.combat-sprite,
+.hero-sprite,
+.map-dog {
+  transition: transform .18s ease, filter .18s ease;
+}
+.combat-sprite:hover,
+.hero-sprite:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+@media (max-width: 760px) {
+  .creator-modal-layout,
+  .world-map-grid {
+    grid-template-columns: 1fr;
+  }
+  .creator-stat-preview {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .creator-preview-sprite {
+    width: 140px;
+    height: 140px;
+  }
+}
+
+
+/* v0.25 market/faction/profile polish */
+.market-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 12px;
+}
+.trader-list {
+  display: grid;
+  gap: 8px;
+}
+.trader-button {
+  text-align: left;
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  padding: 12px;
+}
+.trader-button span {
+  color: var(--muted);
+  line-height: 1.25;
+}
+.trader-button.active {
+  border-color: rgba(255,217,112,.42);
+  background: linear-gradient(135deg, rgba(255,217,112,.14), rgba(138,207,127,.08));
+}
+.trader-detail {
+  margin-bottom: 10px;
+}
+.trader-stock-card {
+  border-color: rgba(138,207,127,.16);
+}
+.profile-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.profile-buttons button {
+  padding: 8px;
+}
+.market-screen.tab-panel.active {
+  display: block;
+}
+#bossDialoguePanel {
+  margin-top: 10px;
+}
+@media (max-width: 860px) {
+  .market-layout {
+    grid-template-columns: 1fr;
+  }
+  .profile-buttons {
+    grid-template-columns: 1fr;
+  }
+}

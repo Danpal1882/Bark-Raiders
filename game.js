@@ -28,7 +28,7 @@ const DOGS = {
   pom: { name:'Pip', breed:'Pomeranian Chaos Raider', unlock:'Find/equip any non-starter gear', sprite:SPRITES.pom, desc:'Tiny chaos looter. Better rare finds and dodge, but fragile.', hp:-8, attack:0, defence:-1, crit:8, speed:1, carry:-4, scout:0, rare:8, extract:4 },
   jack: { name:'Rustle', breed:'Jack Russell Scrapper', unlock:'Beat the first boss / unlock zone 2', sprite:SPRITES.jack, desc:'Fast, brave, slightly chaotic. Great at chasing enemies and boss pushes.', hp:4, attack:2, defence:1, crit:5, speed:1, carry:0, scout:0, rare:2, extract:2 },
   collie: { name:'Scout', breed:'Border Collie Pathfinder', unlock:'Upgrade Watch Tower to Lv.3', sprite:SPRITES.collie, desc:'Fast route-finder. Better scouting and extraction.', hp:-2, attack:0, defence:0, crit:0, speed:1, carry:0, scout:1, rare:0, extract:8 },
-  dachshund: { name:'Noodle', breed:'Dachshund Sneak', unlock:'Research Dog Whistle', sprite:SPRITES.dachshund, desc:'Sneaky scavenger. Lower threat and better extraction.', hp:-4, attack:-1, defence:0, crit:4, speed:0, carry:2, scout:0, rare:3, extract:12 },
+  dachshund: { name:'Noodle', breed:'Dachshund Sneak', unlock:'Reach Ruined City Floor 3 or research Dog Whistle', sprite:SPRITES.dachshund, desc:'Sneaky scavenger. Lower threat and better extraction.', hp:-4, attack:-1, defence:0, crit:4, speed:0, carry:2, scout:0, rare:3, extract:12 },
 };
 
 const RAID_PLANS = {
@@ -132,7 +132,7 @@ const CONTRACTS = {
   wood:{name:'Wood Recovery', desc:'Bring back 30 wood during this raid.', reward:{wood:8, treats:3}, target:30, progress:()=>state.contractProgress.wood||0},
   pest:{name:'Pest Control', desc:'Defeat 5 enemies during this raid.', reward:{medicine:3, treats:4}, target:5, progress:()=>state.contractProgress.kills||0},
   trader:{name:'Trader Escort', desc:'Reach/buy from a trader room and survive.', reward:{metal:5, treats:4}, target:1, progress:()=>state.contractProgress.trader||0},
-  boss:{name:'Boss Bounty', desc:'Defeat the dungeon boss.', reward:{gunParts:4, treats:6}, target:1, progress:()=>state.contractProgress.boss||0},
+  boss:{name:'Boss Bounty', desc:'Defeat the dungeon boss on floors 3, 6, or 10.', reward:{gunParts:4, treats:6}, target:1, progress:()=>state.contractProgress.boss||0},
   medical:{name:'Supply Rescue', desc:'Clear 2 medical rooms.', reward:{medicine:5, water:5, treats:3}, target:2, progress:()=>state.contractProgress.medical||0},
   silent:{name:'Silent Run', desc:'Clear 8 rooms while defeating no enemies.', reward:{fabric:5, treats:5}, target:8, progress:()=>state.contractProgress.rooms||0, fail:()=>state.contractProgress.kills>0},
 };
@@ -239,7 +239,7 @@ const UPGRADE_DEFS = {
 };
 
 const RESEARCH = {
-  dogWhistle:{ name:'Dog Whistle', desc:'Unlocks Auto-Raid.', cost:()=>({metal:10, wood:8, fabric:6, gunParts:2}) },
+  dogWhistle:{ name:'Dog Whistle', desc:'Improves Auto-Raid by shortening the restart delay and giving safer repeat runs.', cost:()=>({metal:10, wood:8, fabric:6, gunParts:2}) },
   ammoPress:{ name:'Ammo Press', desc:'Start each raid with +5 ammo reserve.', cost:()=>({metal:14, gunParts:5, wood:6}) },
   paddedHarness:{ name:'Padded Harness', desc:'Adds +10 carry limit and +1 defence.', cost:()=>({fabric:14, metal:8, medicine:4}) },
   bossMap:{ name:'Boss Trail Map', desc:'Boss tile reveals earlier and boss crit improves.', cost:()=>({wood:10, metal:10, gunParts:4}) },
@@ -289,7 +289,7 @@ const GEAR_POOLS = {
 };
 
 const state = {
-  running:false, mode:'idle', seconds:0, ticker:null, autoRaid:false, autoExtract:false, autoExtractRule:'off', offlineReward:null,
+  running:false, mode:'idle', seconds:0, ticker:null, autoRaid:false, autoExtract:false, autoExtractRule:'off', offlineReward:null, settings:{speed:1000, logDetail:'full', reduceMotion:false}, raidHistory:[], lastRaidSummary:null,
   zoneId:0, unlockedZones:1, planId:'balanced', dogId:'shiba', contractId:'none', selectedConsumables:[], activeConsumables:[], consumableUsed:{}, contractProgress:{}, contractRewardClaimed:false, lootFilter:{}, weather:null, modifier:null, threat:0,
   map:[], roamEnemies:[], mapSize:12, position:{x:0,y:0}, revealedTiles:0, combat:null, currentBoss:null, dungeonKeys:0, pendingChoice:null, activeEventTile:null,
   dog:{
@@ -339,7 +339,7 @@ function isDogUnlocked(id){
   if(id === 'pom') return Object.values(state.equipment || {}).some(item => item.rarity && item.rarity !== 'Starter');
   if(id === 'jack') return state.unlockedZones >= 2;
   if(id === 'collie') return (state.upgrades?.watch || 1) >= 3;
-  if(id === 'dachshund') return !!state.research?.dogWhistle;
+  if(id === 'dachshund') return !!state.research?.dogWhistle || maxUnlockedFloor('city') >= 3;
   return false;
 }
 
@@ -397,6 +397,8 @@ function wantsLoot(type){
 }
 
 function log(message){
+  const important = /Boss|Injury|Contract|extracted|limped|defeated|unlocked|Raid started|Auto-Extract|Manual extraction|trader purchase|levelled/i.test(message);
+  if(state.settings?.logDetail === 'important' && !important) return;
   const el=document.createElement('div');
   el.className='log-entry';
   el.textContent=message;
@@ -433,6 +435,12 @@ function applyUpgrades(){
   if(state.research.ammoPress) d.ammoMax += 5;
   if(state.research.paddedHarness){ d.carryMax += 10; d.defence += 1; }
   if(state.research.bossMap && state.combat?.enemy?.bossFight) d.crit += 5;
+  (state.injuries || []).forEach(injury => {
+    if(injury.effect === 'speed') d.speed = Math.max(1, d.speed - 1);
+    if(injury.effect === 'hp') d.maxHp = Math.max(8, d.maxHp - 8);
+    if(injury.effect === 'crit') d.crit = Math.max(0, d.crit - 8);
+    if(injury.effect === 'carry') d.carryMax = Math.max(6, d.carryMax - 4);
+  });
 }
 
 function computeRaidStats(){
@@ -723,7 +731,7 @@ function updateRoamingEnemies(){
 function tilePriority(tile){
   if(currentPlan().focus==='boss' && tile.type==='boss') return 12;
   if(tile.type==='boss') return state.dog.level>=2 ? 6 : 1;
-  const p={rare:10,weapon:9,medical:8,trader:8,crate:7,scrap:7,grove:7,tree:6,food:6,water:6,event:6,enemy:4,empty:2};
+  const p={exit:9,rare:10,weapon:9,medical:8,trader:8,crate:7,scrap:7,grove:7,tree:6,food:6,water:6,event:6,enemy:4,empty:2};
   if(currentPlan().focus==='wood' && ['tree','grove'].includes(tile.type)) return 12;
   if(currentPlan().focus==='scrap' && ['scrap','weapon'].includes(tile.type)) return 12;
   if(currentPlan().focus==='medical' && ['medical','event'].includes(tile.type)) return 12;
@@ -957,6 +965,7 @@ function beginTraderChoice(tile){
     ],
   };
   state.contractProgress.trader = 1;
+  pushDialogue('Trader: "Good gear, bad prices. That is business."');
   state.encounterText='Raid trader found. Choose whether to buy, or walk away.';
   render();
 }
@@ -1019,6 +1028,8 @@ function startCombat(enemy,bossFight=false,sourceId=null){
   state.threat+=bossFight?18:8;
   state.encounterText=`${bossFight?'Boss fight!':'Combat!'} ${state.dog.name} engages ${enemy.name}.`;
   log(state.encounterText);
+  if(bossFight) pushDialogue(`${enemy.name}: "This floor belongs to me."`);
+  else if(Math.random()<.28) pushDialogue(`${state.dog.name}: "Teeth out. Paws steady."`);
 }
 
 function enemyBehaviourHit(e,notes){
@@ -1112,9 +1123,9 @@ function winCombat(e){
   if(e.bossFight){
     state.encounterText=`Boss defeated! ${e.name} has been beaten.`;
     log(`Boss defeated! ${e.name} drops a huge haul.`);
-    if(state.unlockedZones<ZONES.length && state.zoneId===state.unlockedZones-1){
+    if(state.unlockedZones<ZONES.length && state.zoneId===state.unlockedZones-1 && currentFloor()>=3){
       state.unlockedZones++;
-      log(`New zone unlocked: ${ZONES[state.unlockedZones-1].name}.`);
+      log(`New biome unlocked: ${BIOMES[Object.keys(BIOMES)[state.unlockedZones-1]].name}.`);
     }
     state.combat=null; state.mode='roaming'; endRaid(true,true); return;
   }
@@ -1202,6 +1213,7 @@ function resolveTile(tile){
   else if(tile.type==='trader') beginTraderChoice(tile);
   else if(tile.type==='enemy'){ startCombat(pick(currentZone().enemies),false); if(state.mode !== 'combat'){ tile.cleared=true; tile.type='empty'; state.contractProgress.rooms++; } }
   else if(tile.type==='boss') startCombat(state.currentBoss || currentZone().boss,true);
+  else if(tile.type==='exit'){ tile.cleared=true; state.contractProgress.rooms++; log(`${state.dog.name} found the exit stairs and can extract safely.`); endRaid(true,false,true); return; }
   else { tile.cleared=true; state.encounterText='Quiet block. Nothing useful here.'; }
 
   weatherDrain();
@@ -1272,6 +1284,7 @@ function tickRaid(){
 function startRaid(){
   if(state.running) return;
   state.zoneId=Number($('zoneSelect').value);
+  state.floorId=Number($('floorSelect').value);
   state.planId=$('planSelect').value;
   state.dogId=$('dogSelect').value;
   state.contractId=$('contractSelect').value;
@@ -1288,10 +1301,11 @@ function startRaid(){
   computeRaidStats();
   state.dog.hp=state.dog.maxHp; state.dog.carry=0; state.dog.ammo=Math.min(state.dog.ammoMax,state.resources.ammo+Math.min(2,state.modifier?.ammoBonus||0));
   generateMap(); if(hasConsumable('map')){ revealAround(state.position.x,state.position.y,state.dog.scoutRange+2); useConsumable('map'); log('Map Scrap reveals extra nearby rooms.'); } generateRoamingEnemies();
-  log(`Raid started: ${currentPlan().name} in ${currentZone().name} with ${state.dog.name}.`);
+  pushDialogue(`${state.dog.name}: "Sniffing out ${floorLabel()}..."`);
+  log(`Raid started: ${currentPlan().name} in ${floorLabel()} with ${state.dog.name}.`);
   log(`Weather: ${state.weather.icon} ${state.weather.name}. Modifier: ${state.modifier.name}. Extraction chance ${extractChance()}%.`);
-  $('startBtn').disabled=true; $('returnBtn').disabled=false; $('zoneSelect').disabled=true; $('planSelect').disabled=true; $('dogSelect').disabled=true;
-  clearInterval(state.ticker); state.ticker=setInterval(tickRaid,1000); render();
+  $('startBtn').disabled=true; $('returnBtn').disabled=false; $('zoneSelect').disabled=true; $('floorSelect').disabled=true; $('planSelect').disabled=true; $('dogSelect').disabled=true;
+  clearInterval(state.ticker); state.ticker=setInterval(tickRaid,state.settings.speed||1000); render();
 }
 
 function bankRaidLoot(){
@@ -1299,20 +1313,97 @@ function bankRaidLoot(){
   state.resources.ammo=Math.max(0,state.dog.ammo);
 }
 
-function loseSomeLoot(){ for(const type of RESOURCES){ if(type!=='ammo') state.raidLoot[type]=Math.floor(state.raidLoot[type]*.55); } }
+const INJURY_POOL = [
+  {name:'Limping Paw', turns:2, desc:'-1 speed while injured.', effect:'speed'},
+  {name:'Bruised Ribs', turns:3, desc:'-8 max HP while injured.', effect:'hp'},
+  {name:'Shaken Nerves', turns:2, desc:'-8% crit while injured.', effect:'crit'},
+  {name:'Torn Pack Strap', turns:2, desc:'-4 carry while injured.', effect:'carry'},
+];
 
-function endRaid(success,bossClear=false){
+function applyInjury(){
+  if(Math.random() < .78){
+    const injury = {...pick(INJURY_POOL)};
+    injury.turns = 1 + rand(3);
+    state.injuries.push(injury);
+    pushDialogue(`${state.dog.name}: "Oof... I need a lie down after that."`);
+    log(`Injury gained: ${injury.name} (${injury.turns} raids).`);
+    return injury;
+  }
+  return null;
+}
+
+function tickInjuries(raidEnded){
+  if(!raidEnded || !state.injuries.length) return;
+  state.injuries.forEach(i=>i.turns--);
+  const healed = state.injuries.filter(i=>i.turns<=0);
+  state.injuries = state.injuries.filter(i=>i.turns>0);
+  healed.forEach(i=>log(`Injury healed: ${i.name}.`));
+}
+
+function unlockNextFloor(){
+  const key = biomeKey();
+  const f = currentFloor();
+  const max = maxUnlockedFloor(key);
+  if(f >= max && f < 10){
+    state.biomeFloors[key] = f + 1;
+    pushDialogue(`${state.dog.name}: "New route found! ${currentBiome().name} floor ${f+1} is open."`);
+  }
+}
+
+function loseSomeLoot(){
+  for(const type of RESOURCES){
+    if(type!=='ammo') state.raidLoot[type]=Math.floor(state.raidLoot[type]*.65);
+  }
+}
+
+
+function lootSummaryText(loot=state.raidLoot){
+  return RESOURCES.filter(type=>type!=='ammo' && loot[type]>0).map(type=>`${ICONS[type]} ${loot[type]} ${type}`).join(', ');
+}
+function makeRaidHistoryEntry(success,bossClear,floorClear,lootBeforeBank,newInjuries=[]){
+  const result = bossClear ? 'Boss Cleared' : floorClear ? 'Floor Cleared' : success ? 'Extracted' : 'Failed Raid';
+  const entry = {
+    result,
+    success,
+    biome: currentBiome().name,
+    floor: currentFloor(),
+    plan: currentPlan().name,
+    dog: state.dog.name,
+    contract: currentContract().name,
+    lootText: lootSummaryText(lootBeforeBank),
+    duration: fmt(state.seconds),
+    injuryText: newInjuries.map(i=>i.name).join(', '),
+    progressText: success && (bossClear || floorClear) ? `Floor ${Math.min(10,currentFloor()+1)} unlocked if available` : '',
+    date: new Date().toISOString(),
+  };
+  state.raidHistory.unshift(entry);
+  state.raidHistory = state.raidHistory.slice(0,30);
+  state.lastRaidSummary = entry;
+}
+
+function endRaid(success,bossClear=false,floorClear=false){
   if(!state.running) return;
   clearInterval(state.ticker); state.running=false; state.mode='idle';
-  if(!success){ loseSomeLoot(); log('Bad extraction: some loot was dropped on the way home.'); }
+  const newInjuries=[];
+  if(!success){
+    const injury=applyInjury();
+    if(injury) newInjuries.push(injury);
+    loseSomeLoot();
+    log('Bad extraction: some loot was dropped on the way home and an injury may linger.');
+  }
+  const lootBeforeBank={...state.raidLoot};
   bankRaidLoot();
+  if(success && (bossClear || floorClear)) unlockNextFloor();
+  tickInjuries(success);
   applyContractReward();
+  makeRaidHistoryEntry(success,bossClear,floorClear,lootBeforeBank,newInjuries);
   if(bossClear) log(`${state.dog.name} returned victorious after defeating ${(state.currentBoss || currentZone().boss).name}.`);
-  else if(success) log(`${state.dog.name} extracted to the kennel with supplies.`);
+  else if(success) log(`${state.dog.name} extracted to the kennel with supplies from ${floorLabel()}.`);
   else log(`${state.dog.name} limped home after a rough raid.`);
-  $('startBtn').disabled=false; $('returnBtn').disabled=true; $('zoneSelect').disabled=false; $('planSelect').disabled=false; $('dogSelect').disabled=false;
+  $('startBtn').disabled=false; $('returnBtn').disabled=true; $('zoneSelect').disabled=false; $('floorSelect').disabled=false; $('planSelect').disabled=false; $('dogSelect').disabled=false;
   save(); render();
-  if(state.autoRaid && state.research.dogWhistle) setTimeout(()=>{ if(!state.running) startRaid(); },900);
+  if(state.autoRaid) setTimeout(()=>{ if(!state.running) startRaid(); }, state.research.dogWhistle ? 450 : 1100);
+  else showRaidSummary();
 }
 
 function manualExtract(){
@@ -1424,10 +1515,162 @@ function equipItem(category, index){
   save(); render();
 }
 
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.toggle('active', btn.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(panel=>panel.classList.toggle('active', panel.dataset.tabPanel===tab));
+}
+window.switchTab = switchTab;
+
+function selectedLoadoutSummary(){
+  const zone = currentBiome();
+  const plan = currentPlan();
+  const contract = currentContract();
+  const boss = isBossFloor() ? (state.currentBoss || chooseDungeonBoss()) : null;
+  const consumables = state.selectedConsumables.length ? state.selectedConsumables.map(k=>`${CONSUMABLES[k].icon} ${CONSUMABLES[k].name}`).join(', ') : 'None';
+  const injuries = state.injuries?.length ? state.injuries.map(i=>`${i.name} (${i.turns})`).join(', ') : 'None';
+  return {
+    zone, plan, contract, boss, consumables, injuries,
+    risk: currentFloor() >= 8 ? 'Severe' : currentFloor() >= 5 ? 'High' : currentFloor() >= 3 ? 'Moderate' : 'Low',
+  };
+}
+
+function renderDispatchSummary(){
+  const s = selectedLoadoutSummary();
+  $('dispatchSummary').innerHTML = `
+    <div class="dispatch-grid">
+      <div class="dispatch-tile"><strong>${s.zone.icon} Biome</strong><span>${s.zone.name}</span></div>
+      <div class="dispatch-tile"><strong>Floor</strong><span>${currentFloor()}${isBossFloor()?' · Boss Floor':''}</span></div>
+      <div class="dispatch-tile"><strong>Plan</strong><span>${s.plan.name}</span></div>
+      <div class="dispatch-tile"><strong>Raider</strong><span>${state.dog.name} · ${state.dog.breed}</span></div>
+      <div class="dispatch-tile"><strong>Contract</strong><span>${s.contract.name}</span></div>
+      <div class="dispatch-tile"><strong>Auto-Extract</strong><span>${state.autoExtractRule}</span></div>
+      <div class="dispatch-tile"><strong>Consumables</strong><span>${s.consumables}</span></div>
+      <div class="dispatch-tile"><strong>Injuries</strong><span>${s.injuries}</span></div>
+      <div class="dispatch-tile"><strong>Known Boss</strong><span>${s.boss ? s.boss.name : 'No boss on this floor'}</span></div>
+      <div class="dispatch-tile"><strong>Risk</strong><span>${s.risk}</span></div>
+    </div>
+    <p class="muted">Auto-Raid uses this saved setup and skips this screen after each extraction.</p>`;
+}
+
+function openDispatch(){
+  if(state.running) return;
+  applyUpgrades();
+  updateGear();
+  renderDispatchSummary();
+  $('dispatchModal').classList.remove('hidden');
+}
+function closeDispatch(){ $('dispatchModal').classList.add('hidden'); }
+function confirmDispatch(auto=false){
+  closeDispatch();
+  if(auto){
+    state.autoRaid=true;
+    log('Auto-Raid enabled from dispatch terminal.');
+  }
+  pushDialogue(`${state.dog.name}: "Dispatch confirmed."`);
+  startRaid();
+}
+
+function renderBossIntel(){
+  const pool = bossPoolForBiome();
+  const current = isBossFloor() ? (state.currentBoss || chooseDungeonBoss()) : null;
+  const bossCards = pool.map(b=>`<div class="intel-card">
+    <strong>${b.icon} ${b.name}</strong>
+    <span>Mechanic: ${bossMechanicLabel(b.behavior)}</span>
+    <span>Base HP ${b.hp} · ATK ${b.atk} · DEF ${b.def}</span>
+    <span>Rewards: ${costText(b.reward)}</span>
+  </div>`).join('');
+  const floorRows = Array.from({length:10},(_,i)=>{
+    const f=i+1, unlocked=f<=maxUnlockedFloor();
+    return `<span class="${unlocked?'unlocked':'locked'}">F${f}${isBossFloor(f)?' 👑':''}</span>`;
+  }).join('');
+  $('bossIntel').innerHTML = `<div class="intel-card wide">
+    <strong>${currentBiome().icon} ${currentBiome().name} Intel</strong>
+    <span>${currentBiome().desc}</span>
+    <span>Current floor: ${currentFloor()} · ${isBossFloor() ? `Expected boss: ${current?.name || 'unknown'}` : 'No boss on this floor'}</span>
+    <div class="floor-pips">${floorRows}</div>
+  </div>${bossCards}`;
+}
+
+function bossMechanicLabel(key){
+  return ({
+    summon:'Summons extra pressure',
+    lootStealBoss:'Steals raid loot',
+    bleedBoss:'Bleed damage over time',
+    poisonBoss:'Poison/threat pressure',
+    stealBoss:'Steals scrap/gun parts',
+    armourCheck:'Punishes weak weapons',
+    hazards:'Creates hazards',
+    burnBoss:'Burn damage',
+    chaseBoss:'Threat pressure',
+  })[key] || key || 'Unknown';
+}
+
+function renderRaidHistory(){
+  const rows = (state.raidHistory || []).slice(0,12).map(r=>`<div class="history-row ${r.success?'success':'fail'}">
+    <strong>${r.result}</strong>
+    <span>${r.biome} F${r.floor} · ${r.plan} · ${r.dog}</span>
+    <span>Loot: ${r.lootText || 'none'} · ${r.contract || 'No Contract'}</span>
+  </div>`).join('');
+  $('raidHistory').innerHTML = rows || '<p class="muted">No raids logged yet.</p>';
+}
+
+function renderSettings(){
+  $('speedSelect').value=String(state.settings.speed||1000);
+  $('logDetailSelect').value=state.settings.logDetail||'full';
+  $('reduceMotionToggle').checked=!!state.settings.reduceMotion;
+  document.body.classList.toggle('reduce-motion', !!state.settings.reduceMotion);
+}
+
+function exportSave(){
+  $('saveBox').value = btoa(unescape(encodeURIComponent(JSON.stringify(JSON.parse(localStorage.getItem('barkRaidersSaveV9')||'{}')))));
+  log('Save exported.');
+}
+function importSave(){
+  try{
+    const raw = $('saveBox').value.trim();
+    if(!raw) return;
+    const data = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    localStorage.setItem('barkRaidersSaveV9', JSON.stringify(data));
+    log('Save imported. Reloading...');
+    location.reload();
+  } catch(e){ log('Import failed. Check the save text.'); }
+}
+
+function showRaidSummary(){
+  if(!state.lastRaidSummary) return;
+  const r=state.lastRaidSummary;
+  $('raidSummary').innerHTML = `<div class="dispatch-grid">
+    <div class="dispatch-tile"><strong>Result</strong><span>${r.result}</span></div>
+    <div class="dispatch-tile"><strong>Location</strong><span>${r.biome} Floor ${r.floor}</span></div>
+    <div class="dispatch-tile"><strong>Raider</strong><span>${r.dog}</span></div>
+    <div class="dispatch-tile"><strong>Duration</strong><span>${r.duration}</span></div>
+    <div class="dispatch-tile"><strong>Loot Secured</strong><span>${r.lootText || 'None'}</span></div>
+    <div class="dispatch-tile"><strong>Contract</strong><span>${r.contract}</span></div>
+    <div class="dispatch-tile"><strong>Injuries</strong><span>${r.injuryText || 'None'}</span></div>
+    <div class="dispatch-tile"><strong>Progress</strong><span>${r.progressText || 'No new floor'}</span></div>
+  </div>`;
+  $('summaryModal').classList.remove('hidden');
+}
+function closeSummary(){ $('summaryModal').classList.add('hidden'); }
+
 function renderZoneOptions(){
   $('zoneSelect').innerHTML=ZONES.map((zone,idx)=>{
     const locked=idx>=state.unlockedZones;
-    return `<option value="${zone.id}" ${idx===state.zoneId?'selected':''} ${locked?'disabled':''}>${zone.name}${locked?` (Locked: ${zone.unlock})`:''}</option>`;
+    const key=Object.keys(BIOMES)[idx % Object.keys(BIOMES).length];
+    const biome=BIOMES[key];
+    return `<option value="${zone.id}" ${idx===state.zoneId?'selected':''} ${locked?'disabled':''}>${biome.icon} ${biome.name}${locked?` (Locked: ${zone.unlock})`:''}</option>`;
+  }).join('');
+  renderFloorOptions();
+}
+
+function renderFloorOptions(){
+  const max=maxUnlockedFloor();
+  const current=clamp(Number(state.floorId||1),1,max);
+  state.floorId=current;
+  $('floorSelect').innerHTML=Array.from({length:max},(_,i)=>{
+    const f=i+1;
+    return `<option value="${f}" ${f===current?'selected':''}>Floor ${f}${isBossFloor(f)?' — Boss Floor':''}</option>`;
   }).join('');
 }
 
@@ -1448,7 +1691,7 @@ function renderStats(){
   $('statusText').textContent=state.running?(state.mode==='choice'?'Choosing event.':state.mode==='combat'?'In combat.':'Roaming the zone.'):'Resting at the kennel.';
   $('weatherText').textContent=state.weather?`${state.weather.icon} ${state.weather.name} — ${state.weather.text}`:'None';
   $('modifierText').textContent=state.modifier?`${state.modifier.name} — ${state.modifier.text}`:'None';
-  $('threatText').textContent=state.running?`${Math.round(state.threat)}% · Extract ${extractChance()}%`:'0%';
+  $('threatText').textContent=state.running?`${Math.round(state.threat)}% · Extract ${extractChance()}%`:`0%${(state.injuries||[]).length?` · ${(state.injuries||[]).length} injury`:''}`;
   $('dogName').textContent=state.dog.name; $('dogBreedText').textContent=`Breed: ${state.dog.breed}`;
   $('gearSummary').innerHTML=`Gear: <strong>${state.equipment.weapon.name}</strong> + <strong>${state.equipment.armour.name}</strong>`;
   const hpPct=clamp(state.dog.hp/state.dog.maxHp*100,0,100), carryPct=clamp(state.dog.carry/state.dog.carryMax*100,0,100), ammoPct=clamp(state.dog.ammo/state.dog.ammoMax*100,0,100), xpPct=clamp(state.dog.xp/state.dog.xpNext*100,0,100);
@@ -1456,7 +1699,7 @@ function renderStats(){
   $('hpBar').style.width=`${hpPct}%`; $('carryBar').style.width=`${carryPct}%`; $('ammoBar').style.width=`${ammoPct}%`; $('xpBar').style.width=`${xpPct}%`;
   $('raidTimer').textContent=`${String(Math.floor(state.seconds/60)).padStart(2,'0')}:${String(state.seconds%60).padStart(2,'0')}`;
   const biome=currentBiome();
-  $('mapSummary').textContent=`${biome.icon} ${biome.name} · Boss: ${(state.currentBoss || currentZone().boss).name} · ${currentPlan().name} · ${state.revealedTiles}/${state.map.length} rooms`;
+  $('mapSummary').textContent=`${biome.icon} ${biome.name} F${currentFloor()}${isBossFloor()?' Boss':''} · ${state.currentBoss?`Boss: ${state.currentBoss.name}`:'No boss'} · ${state.revealedTiles}/${state.map.length} rooms`;
   $('statGrid').innerHTML=[['Attack',state.dog.attack],['Defence',state.dog.defence],['Crit',`${state.dog.crit}%`],['Speed',state.dog.speed],['Scout',state.dog.scoutRange],['Slots',`${inventoryTypesUsed()}/${state.dog.inventorySlots}`]].map(([l,v])=>`<div class="stat"><strong>${v}</strong><span>${l}</span></div>`).join('');
 }
 
@@ -1517,7 +1760,7 @@ function renderCombat(){
   $('encounterText').textContent=state.encounterText;
 }
 
-function tileImg(tile){ if(tile.cleared && tile.type!=='base') return TILE_ART.cleared; return TILE_ART[tile.type]||TILE_ART.empty; }
+function tileImg(tile){ if(tile.cleared && tile.type!=='base') return TILE_ART.cleared; if(tile.type==='exit') return TILE_ART.event; return TILE_ART[tile.type]||TILE_ART.empty; }
 function mapEnemySprite(tile){ if(tile.type==='boss') return (state.currentBoss || currentZone().boss).sprite; if(tile.type==='enemy'){ const list=currentZone().enemies; return list[(tile.x*7+tile.y*11)%list.length].sprite; } return null; }
 
 function renderMap(){
@@ -1614,6 +1857,31 @@ function renderConsumableSetup(){
   }).join('');
 }
 
+function renderProgressStatus(){
+  const key=biomeKey();
+  const max=maxUnlockedFloor(key);
+  const injuries = (state.injuries || []).length
+    ? state.injuries.map(i=>`<span>${i.name}: ${i.turns} raid${i.turns===1?'':'s'} · ${i.desc}</span>`).join('')
+    : '<span>No active injuries.</span>';
+  const dialogue = (state.dialogue || []).length
+    ? state.dialogue.map(line=>`<span>💬 ${line}</span>`).join('')
+    : '<span>No recent dialogue.</span>';
+  $('progressStatus').innerHTML = `<div class="gear">
+    <strong>${currentBiome().icon} ${currentBiome().name}</strong>
+    <span>Selected: Floor ${currentFloor()}${isBossFloor()?' · Boss Floor':''}</span>
+    <span>Unlocked floors: ${max}/10</span>
+    <span>Boss floors: 3, 6, 10</span>
+  </div>
+  <div class="gear">
+    <strong>Injuries</strong>
+    ${injuries}
+  </div>
+  <div class="gear">
+    <strong>Dialogue</strong>
+    ${dialogue}
+  </div>`;
+}
+
 function renderContractStatus(){
   const c = currentContract();
   const rewards = Object.entries(c.reward || {}).map(([k,v]) => k==='treats' ? `🦴 ${v}` : `${ICONS[k]} ${v}`).join(' ');
@@ -1678,13 +1946,20 @@ function renderPerks(){
   }).join('');
 }
 
+function gearDeltaText(category,item){
+  const cur=state.equipment[category] || {};
+  const delta=(item.score||0)-(cur.score||0);
+  if(delta===0) return '· same';
+  return delta>0?`· +${delta} vs equipped`:`· ${delta} vs equipped`;
+}
+
 function renderEquipmentInventory(){
   $('inventoryGrid').innerHTML = Object.entries(state.equipmentInventory).map(([category, items]) => {
     return items.map((item, index) => {
       const equipped = state.equipment[category]?.name === item.name;
       return `<div class="inventory-item ${equipped ? 'equipped' : ''}">
         <strong>${equipped ? '⭐ ' : ''}${category}: ${item.name}</strong>
-        <span>${item.rarity || 'Unknown'} · score ${item.score || 0}</span>
+        <span>${item.rarity || 'Unknown'} · score ${item.score || 0} ${gearDeltaText(category,item)}</span>
         <button ${equipped || state.running ? 'disabled' : ''} onclick="equipItem('${category}', ${index})">${equipped ? 'Equipped' : 'Equip'}</button>
       </div>`;
     }).join('');
@@ -1692,9 +1967,9 @@ function renderEquipmentInventory(){
 }
 
 function render(){
-  renderZoneOptions(); renderPlanOptions(); renderDogOptions(); renderContractOptions(); renderConsumableSetup(); renderLootFilter(); renderStats(); renderGear(); renderEquipment(); renderResources(); renderPackManager(); renderUpgrades(); renderResearch(); renderKennel(); renderChoice(); renderContractStatus(); renderHubTrader(); renderQuests(); renderPerks(); renderEquipmentInventory(); renderCombat(); renderMap();
+  renderZoneOptions(); renderPlanOptions(); renderDogOptions(); renderContractOptions(); renderConsumableSetup(); renderLootFilter(); renderStats(); renderGear(); renderEquipment(); renderResources(); renderPackManager(); renderUpgrades(); renderResearch(); renderKennel(); renderChoice(); renderProgressStatus(); renderContractStatus(); renderHubTrader(); renderQuests(); renderPerks(); renderEquipmentInventory(); renderBossIntel(); renderRaidHistory(); renderSettings(); renderCombat(); renderMap();
   $('autoBtn').textContent=`Auto-Raid: ${state.autoRaid?'On':'Off'}`;
-  $('autoBtn').disabled=!state.research.dogWhistle;
+  $('autoBtn').disabled=false;
   $('autoExtractBtn').textContent=`Auto-Extract: ${state.autoExtract?'On':'Off'}`;
   $('extractSelect').value = state.autoExtractRule || 'off';
 }
@@ -1755,7 +2030,7 @@ function claimOffline(){
 
 function save(){
   localStorage.setItem('barkRaidersSaveV9', JSON.stringify({
-    resources:state.resources, upgrades:state.upgrades, unlockedZones:state.unlockedZones, zoneId:state.zoneId, planId:state.planId, dogId:state.dogId, contractId:state.contractId, selectedConsumables:state.selectedConsumables, lootFilter:state.lootFilter, autoExtract:state.autoExtract, autoExtractRule:state.autoExtractRule, treats:state.treats, perks:state.perks, quests:state.quests, equipmentInventory:state.equipmentInventory,
+    resources:state.resources, upgrades:state.upgrades, unlockedZones:state.unlockedZones, zoneId:state.zoneId, floorId:state.floorId, biomeFloors:state.biomeFloors, injuries:state.injuries, dialogue:state.dialogue, settings:state.settings, raidHistory:state.raidHistory, lastRaidSummary:state.lastRaidSummary, planId:state.planId, dogId:state.dogId, contractId:state.contractId, selectedConsumables:state.selectedConsumables, lootFilter:state.lootFilter, autoExtract:state.autoExtract, autoExtractRule:state.autoExtractRule, treats:state.treats, perks:state.perks, quests:state.quests, equipmentInventory:state.equipmentInventory,
     research:state.research, dog:{level:state.dog.level,xp:state.dog.xp,xpNext:state.dog.xpNext}, autoRaid:state.autoRaid, equipment:state.equipment, lastSeen:Date.now()
   }));
   localStorage.setItem('barkRaidersLastSeenV9', String(Date.now()));
@@ -1769,7 +2044,7 @@ function load(){
     state.upgrades={...state.upgrades,...(data.upgrades||{})};
     state.research={...state.research,...(data.research||{})};
     state.unlockedZones=clamp(data.unlockedZones||1,1,ZONES.length);
-    state.zoneId=clamp(data.zoneId||0,0,state.unlockedZones-1);
+    state.zoneId=clamp(data.zoneId||0,0,state.unlockedZones-1); state.biomeFloors={...state.biomeFloors, ...(data.biomeFloors||{})}; state.floorId=clamp(data.floorId||1,1,maxUnlockedFloor()); state.injuries=data.injuries||[]; state.dialogue=data.dialogue||[]; state.settings={...state.settings, ...(data.settings||{})}; state.raidHistory=data.raidHistory||[]; state.lastRaidSummary=data.lastRaidSummary||null;
     state.planId=data.planId||'balanced'; state.dogId=data.dogId==='bulldog'?'jack':(data.dogId||'shiba'); if(!DOGS[state.dogId]) state.dogId='shiba'; state.lootFilter={...state.lootFilter, ...(data.lootFilter||{})}; state.autoRaid=!!data.autoRaid; state.autoExtract=!!data.autoExtract; state.autoExtractRule=data.autoExtractRule||'off'; state.contractId=data.contractId||'none'; state.selectedConsumables=data.selectedConsumables||[]; state.treats=data.treats||0; state.perks={...state.perks, ...(data.perks||{})}; state.quests=data.quests||state.quests; state.equipmentInventory={...state.equipmentInventory, ...(data.equipmentInventory||{})};
     if(data.dog){ state.dog.level=data.dog.level||1; state.dog.xp=data.dog.xp||0; state.dog.xpNext=data.dog.xpNext||40; }
     if(data.equipment) state.equipment={...state.equipment,...data.equipment};
@@ -1777,17 +2052,27 @@ function load(){
 }
 
 function resetSave(){ if(confirm('Reset Bark Raiders save data?')){ localStorage.removeItem('barkRaidersSaveV9'); localStorage.removeItem('barkRaidersSaveV8'); localStorage.removeItem('barkRaidersSaveV7'); localStorage.removeItem('barkRaidersLastSeenV9'); location.reload(); } }
-function toggleAuto(){ if(!state.research.dogWhistle){ log('Research Dog Whistle first to unlock Auto-Raid.'); return; } state.autoRaid=!state.autoRaid; save(); render(); }
+function toggleAuto(){ state.autoRaid=!state.autoRaid; log(`Auto-Raid ${state.autoRaid?'enabled':'disabled'}.`); save(); render(); }
 function toggleAutoExtract(){ state.autoExtract=!state.autoExtract; if(!state.autoExtract) state.autoExtractRule='off'; else if(state.autoExtractRule==='off') state.autoExtractRule='balanced'; $('extractSelect').value=state.autoExtractRule; save(); render(); }
 
-$('startBtn').addEventListener('click', startRaid);
+$('startBtn').addEventListener('click', openDispatch);
 $('returnBtn').addEventListener('click', manualExtract);
+$('closeDispatchBtn').addEventListener('click', closeDispatch);
+$('confirmDispatchBtn').addEventListener('click', ()=>confirmDispatch(false));
+$('confirmAutoDispatchBtn').addEventListener('click', ()=>confirmDispatch(true));
+$('closeSummaryBtn').addEventListener('click', closeSummary);
 $('resetBtn').addEventListener('click', resetSave);
 $('autoBtn').addEventListener('click', toggleAuto);
 $('autoExtractBtn').addEventListener('click', toggleAutoExtract);
 $('extractSelect').addEventListener('change', e=>{ state.autoExtractRule=e.target.value; state.autoExtract=state.autoExtractRule !== 'off'; save(); render(); });
 $('claimOfflineBtn').addEventListener('click', claimOffline);
-$('zoneSelect').addEventListener('change', e=>{ state.zoneId=Number(e.target.value); generateMap(); render(); });
+$('speedSelect').addEventListener('change', e=>{ state.settings.speed=Number(e.target.value); save(); render(); if(state.running){ clearInterval(state.ticker); state.ticker=setInterval(tickRaid,state.settings.speed||1000); } });
+$('logDetailSelect').addEventListener('change', e=>{ state.settings.logDetail=e.target.value; save(); render(); });
+$('reduceMotionToggle').addEventListener('change', e=>{ state.settings.reduceMotion=e.target.checked; save(); render(); });
+$('exportSaveBtn').addEventListener('click', exportSave);
+$('importSaveBtn').addEventListener('click', importSave);
+$('zoneSelect').addEventListener('change', e=>{ state.zoneId=Number(e.target.value); state.floorId=clamp(state.floorId||1,1,maxUnlockedFloor()); generateMap(); save(); render(); });
+$('floorSelect').addEventListener('change', e=>{ state.floorId=Number(e.target.value); generateMap(); save(); render(); });
 $('planSelect').addEventListener('change', e=>{ state.planId=e.target.value; generateMap(); render(); });
 $('contractSelect').addEventListener('change', e=>{ state.contractId=e.target.value; save(); render(); });
 $('dogSelect').addEventListener('change', e=>{
@@ -1816,7 +2101,1180 @@ load();
 applyUpgrades(); updateGear(); generateMap();
 ensureLootFilter();
 ensureQuests();
-log('Welcome to Bark Raiders v0.16. Cleaner one-screen dashboard and consumable tooltips are in.');
+log('Welcome to Bark Raiders v0.23. Custom raiders, breed variants, dispatch profiles, market, recovery kennel, biome mastery, and bounty board are in.');
 log('Tip: set Auto-Extract to Balanced for normal raids, or Boss Hunt + After Boss Objective for boss attempts.');
 render();
 showOfflineReward();
+
+
+
+/* ===== Bark Raiders v0.23 extension ===== */
+(function(){
+  const BREEDS_V23 = {
+    shiba:{label:'Shiba Inu', role:'Balanced scavenger', legacy:'shiba', hp:0, attack:1, defence:0, crit:5, speed:0, carry:0, scout:0, rare:0, extract:0, colors:{red:'#d1783d', black:'#322824', sesame:'#8b664b', cream:'#dcc6a0'}},
+    jack:{label:'Jack Russell', role:'Aggressive scrapper', legacy:'jack', hp:4, attack:2, defence:1, crit:5, speed:1, carry:0, scout:0, rare:2, extract:2, colors:{tan:'#d9ba88', black:'#2e2a28', tri:'#b37d55'}},
+    collie:{label:'Border Collie', role:'Pathfinder scout', legacy:'collie', hp:-2, attack:0, defence:0, crit:0, speed:1, carry:0, scout:1, rare:0, extract:8, colors:{classic:'#222222', red:'#804734', merle:'#8f949f'}},
+    dachshund:{label:'Dachshund', role:'Sneaky extractor', legacy:'dachshund', hp:-4, attack:-1, defence:0, crit:4, speed:0, carry:2, scout:0, rare:3, extract:12, colors:{blacktan:'#2a2320', chocolate:'#644430', dapple:'#8d7c72'}},
+    pom:{label:'Pomeranian', role:'Rare loot goblin', legacy:'pom', hp:-8, attack:0, defence:-1, crit:8, speed:1, carry:-4, scout:0, rare:8, extract:4, colors:{orange:'#d48641', cream:'#e8d2af', black:'#24201d', white:'#f1eee9', sable:'#8c6a44'}},
+    bulldog:{label:'Bulldog', role:'Tanky brawler', legacy:'jack', hp:10, attack:1, defence:2, crit:0, speed:-1, carry:2, scout:0, rare:0, extract:-4, colors:{tan:'#b6865f', brindle:'#6f4a33', white:'#e8e1d8'}},
+    lab:{label:'Labrador', role:'Recovery specialist', legacy:'shiba', hp:6, attack:0, defence:1, crit:0, speed:0, carry:2, scout:0, rare:0, extract:4, heal:4, colors:{yellow:'#d8c08c', black:'#272321', choco:'#6f4930'}},
+    greyhound:{label:'Greyhound', role:'Fast runner', legacy:'collie', hp:-2, attack:0, defence:-1, crit:4, speed:2, carry:-2, scout:1, rare:1, extract:10, colors:{fawn:'#b58b64', blue:'#747d85', black:'#1d1b1a'}},
+  };
+
+  function v23BreedKeys(){ return Object.keys(BREEDS_V23); }
+  function breedDef(key){ return BREEDS_V23[key] || BREEDS_V23.shiba; }
+  function v23Safe(name, fallback){ return (typeof name === 'string' && name.trim()) ? name.trim() : fallback; }
+
+  function colorOptionsForBreed(key){
+    return Object.entries(breedDef(key).colors).map(([id, hex]) => ({id, hex}));
+  }
+
+  function buildDogSprite(breedKey, colorKey){
+    const breed = breedDef(breedKey);
+    const coat = breed.colors[colorKey] || Object.values(breed.colors)[0] || '#c48a57';
+    const secondary = '#f2e8da';
+    const stroke = '#1c1713';
+    const ear = breedKey === 'jack' ? 'M16 20 L10 8 L20 16 Z M44 20 L54 8 L44 16 Z' :
+                breedKey === 'collie' ? 'M16 18 L10 4 L22 14 Z M42 18 L54 4 L42 14 Z' :
+                breedKey === 'dachshund' ? 'M18 20 C13 14 10 13 10 8 C15 9 18 13 22 18 Z M42 20 C47 14 50 13 50 8 C45 9 42 13 38 18 Z' :
+                breedKey === 'pom' ? 'M16 20 L9 10 L21 14 Z M44 20 L55 10 L43 14 Z' :
+                breedKey === 'bulldog' ? 'M16 21 L12 11 L22 17 Z M44 21 L52 11 L42 17 Z' :
+                'M18 20 L12 10 L22 16 Z M42 20 L52 10 L42 16 Z';
+    const muzzle = breedKey === 'greyhound' ? '<ellipse cx="32" cy="35" rx="13" ry="10" fill="'+secondary+'" stroke="'+stroke+'" stroke-width="2"/><ellipse cx="32" cy="37" rx="9" ry="6" fill="#fff7ed"/>' :
+                   '<ellipse cx="32" cy="35" rx="11" ry="9" fill="'+secondary+'" stroke="'+stroke+'" stroke-width="2"/>';
+    const armour = '<path d="M18 40 Q32 34 46 40 L44 55 Q32 59 20 55 Z" fill="#55606d" stroke="'+stroke+'" stroke-width="2"/><path d="M22 44 H42" stroke="#8bd77f" stroke-width="2"/>';
+    const backpack = '<rect x="8" y="34" width="10" height="15" rx="3" fill="#7a5a3a" stroke="'+stroke+'" stroke-width="2"/>';
+    const weapon = '<rect x="44" y="42" width="15" height="4" rx="2" fill="#474d54" stroke="'+stroke+'" stroke-width="2"/><rect x="47" y="46" width="4" height="8" rx="1" fill="#474d54" stroke="'+stroke+'" stroke-width="2"/>';
+    const bodyVariant = breedKey === 'dachshund'
+      ? '<rect x="14" y="23" width="36" height="22" rx="12" fill="'+coat+'" stroke="'+stroke+'" stroke-width="2"/>'
+      : breedKey === 'greyhound'
+      ? '<ellipse cx="32" cy="36" rx="20" ry="15" fill="'+coat+'" stroke="'+stroke+'" stroke-width="2"/>'
+      : '<ellipse cx="32" cy="34" rx="18" ry="16" fill="'+coat+'" stroke="'+stroke+'" stroke-width="2"/>';
+    const extraFluff = breedKey === 'pom' ? '<circle cx="14" cy="34" r="7" fill="'+coat+'" opacity=".85"/><circle cx="50" cy="34" r="7" fill="'+coat+'" opacity=".85"/>' : '';
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="10" fill="rgba(0,0,0,0)"/>
+        <path d="${ear}" fill="${coat}" stroke="${stroke}" stroke-width="2"/>
+        ${bodyVariant}
+        ${extraFluff}
+        ${muzzle}
+        <circle cx="26" cy="31" r="2" fill="${stroke}"/><circle cx="38" cy="31" r="2" fill="${stroke}"/>
+        <path d="M29 40 Q32 42 35 40" stroke="${stroke}" stroke-width="2" fill="none" stroke-linecap="round"/>
+        ${armour}
+        ${backpack}
+        ${weapon}
+        <path d="M22 55 L20 63 M42 55 L44 63" stroke="${stroke}" stroke-width="3" stroke-linecap="round"/>
+      </svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  function v23MetaState(){
+    if(!state.v23) state.v23 = {};
+    state.v23.kennelSlots = state.v23.kennelSlots || 2;
+    state.v23.dispatchProfiles = state.v23.dispatchProfiles || [];
+    state.v23.biomeMastery = state.v23.biomeMastery || {city:{level:1,xp:0}, sewer:{level:1,xp:0}, factory:{level:1,xp:0}, farmland:{level:1,xp:0}};
+    state.v23.market = state.v23.market || {rep:0, stockSeed:0, stock:[]};
+    state.v23.raiderCounter = state.v23.raiderCounter || 2;
+  }
+
+  function defaultRaiderFromLegacy(){
+    let legacy = 'shiba';
+    if(['pom','jack','collie','dachshund','shiba'].includes(state.dogId)) legacy = state.dogId;
+    const mapColor = {shiba:'red', pom:'orange', jack:'tan', collie:'classic', dachshund:'blacktan'};
+    return {
+      id:'raider1',
+      name:(state.dog && state.dog.name) || (DOGS?.[legacy]?.name) || 'Mochi',
+      breed:legacy,
+      color:mapColor[legacy] || Object.keys(breedDef(legacy).colors)[0],
+      level:(state.dog && state.dog.level) || 1,
+      xp:(state.dog && state.dog.xp) || 0,
+      xpNext:(state.dog && state.dog.xpNext) || 40,
+      bond:0,
+      injuries:[...(state.injuries||[])],
+    };
+  }
+
+  function ensureRoster(){
+    v23MetaState();
+    if(!state.roster || !Array.isArray(state.roster) || !state.roster.length){
+      state.roster = [defaultRaiderFromLegacy()];
+    }
+    state.roster = state.roster.map((r, idx) => ({
+      id:r.id || ('raider'+(idx+1)),
+      name:v23Safe(r.name, 'Raider '+(idx+1)),
+      breed:breedDef(r.breed) ? r.breed : 'shiba',
+      color:(r.color && breedDef(r.breed || 'shiba').colors[r.color]) ? r.color : Object.keys(breedDef(r.breed || 'shiba').colors)[0],
+      level:r.level || 1,
+      xp:r.xp || 0,
+      xpNext:r.xpNext || 40,
+      bond:r.bond || 0,
+      injuries:Array.isArray(r.injuries) ? r.injuries : [],
+    }));
+    if(!state.dogId || !state.roster.some(r => r.id === state.dogId)) state.dogId = state.roster[0].id;
+  }
+
+  function currentRaider(){
+    ensureRoster();
+    return state.roster.find(r => r.id === state.dogId) || state.roster[0];
+  }
+
+  function syncRaiderFromState(){
+    const r = currentRaider();
+    if(!r) return;
+    r.injuries = [...(state.injuries || [])];
+    r.level = state.dog.level || r.level || 1;
+    r.xp = state.dog.xp || r.xp || 0;
+    r.xpNext = state.dog.xpNext || r.xpNext || 40;
+  }
+
+  function selectRaider(id){
+    ensureRoster();
+    if(!state.roster.some(r => r.id === id)) return;
+    syncRaiderFromState();
+    state.dogId = id;
+    const r = currentRaider();
+    state.injuries = [...(r.injuries || [])];
+    state.dog.level = r.level || 1;
+    state.dog.xp = r.xp || 0;
+    state.dog.xpNext = r.xpNext || 40;
+  }
+
+  function masteryFor(key){ v23MetaState(); return state.v23.biomeMastery[key] || {level:1,xp:0}; }
+  function masteryBonusMultiplier(key){
+    const lvl = masteryFor(key).level || 1;
+    if(lvl >= 10) return 1.15;
+    if(lvl >= 5) return 1.10;
+    if(lvl >= 2) return 1.05;
+    return 1;
+  }
+  function awardBiomeMastery(key, amount){
+    v23MetaState();
+    const m = masteryFor(key);
+    m.xp += amount;
+    const threshold = m.level * 20;
+    if(m.xp >= threshold && m.level < 10){
+      m.xp -= threshold;
+      m.level++;
+      log(`Biome Mastery up: ${BIOMES[key].name} reached Lv.${m.level}.`);
+    }
+    state.v23.biomeMastery[key] = m;
+  }
+
+  function marketCatalog(){
+    const rep = state.v23.market.rep || 0;
+    const markdown = Math.max(0, Math.min(20, rep * 2));
+    return [
+      {id:'meds', label:'Emergency Meds', desc:'Clean meds for the recovery kennel.', gives:{medicine:4}, cost:{metal:7, food:6}},
+      {id:'wood', label:'Pallet of Timber', desc:'Useful for kennel upgrades.', gives:{wood:16}, cost:{metal:8, water:5}},
+      {id:'parts', label:'Gun Parts Crate', desc:'Rare parts for the bench.', gives:{gunParts:4}, cost:{metal:15, wood:10, medicine:2}},
+      {id:'ammo', label:'Ammo Bundle', desc:'A basic ammo restock.', gives:{ammo:14}, cost:{metal:8, food:4, gunParts:1}},
+      {id:'fabric', label:'Fabric Roll', desc:'Patch packs and collars.', gives:{fabric:12}, cost:{food:5, water:5}},
+    ].map(item => ({...item, markdown}));
+  }
+
+  function marketCostText(cost, markdown){
+    const adjusted = {};
+    Object.entries(cost).forEach(([k,v]) => adjusted[k] = Math.max(1, Math.round(v * (1 - markdown/100))));
+    return costText(adjusted);
+  }
+
+  function canAffordAdjusted(cost, markdown){
+    return Object.entries(cost).every(([k,v]) => (state.resources[k] || 0) >= Math.max(1, Math.round(v * (1 - markdown/100))));
+  }
+  function payAdjusted(cost, markdown){
+    Object.entries(cost).forEach(([k,v]) => state.resources[k] -= Math.max(1, Math.round(v * (1 - markdown/100))));
+  }
+
+  function buyMarketItem(id){
+    v23MetaState();
+    const item = marketCatalog().find(x => x.id === id);
+    if(!item) return;
+    if(!canAffordAdjusted(item.cost, item.markdown)){ log('Cannot afford market purchase.'); return; }
+    payAdjusted(item.cost, item.markdown);
+    Object.entries(item.gives).forEach(([k,v]) => state.resources[k] = (state.resources[k] || 0) + v);
+    state.v23.market.rep += 1;
+    log(`Market purchase: ${item.label}.`);
+    save(); render();
+  }
+  window.buyMarketItem = buyMarketItem;
+
+  function sellResource(type){
+    const saleQty = Math.min(state.resources[type] || 0, type === 'gunParts' ? 1 : 5);
+    if(saleQty <= 0){ log(`No ${type} available to sell.`); return; }
+    state.resources[type] -= saleQty;
+    state.resources.food += Math.max(1, Math.ceil(saleQty / 2));
+    state.resources.water += Math.max(1, Math.floor(saleQty / 2));
+    state.v23.market.rep += 0.5;
+    log(`Sold ${saleQty} ${type} at the market.`);
+    save(); render();
+  }
+  window.sellResource = sellResource;
+
+  function healRaider(id){
+    const r = state.roster.find(x => x.id === id);
+    if(!r || !r.injuries.length) return;
+    const cost = 4 + r.injuries.length * 2;
+    if((state.resources.medicine || 0) < cost){ log('Not enough medicine to treat that raider.'); return; }
+    state.resources.medicine -= cost;
+    r.injuries = [];
+    if(state.dogId === id) state.injuries = [];
+    log(`${r.name} is patched up in the recovery kennel.`);
+    save(); render();
+  }
+  window.healRaider = healRaider;
+
+  function buyKennelSlot(){
+    v23MetaState();
+    const next = state.v23.kennelSlots + 1;
+    const cost = {wood: next * 6, metal: next * 5, fabric: next * 4};
+    if(!canAffordFromResources(cost)){ log('Not enough resources for another kennel slot.'); return; }
+    payFromResources(cost);
+    state.v23.kennelSlots++;
+    log(`Kennel expanded to ${state.v23.kennelSlots} raider slots.`);
+    save(); render();
+  }
+  window.buyKennelSlot = buyKennelSlot;
+
+  function createRaider(){
+    ensureRoster();
+    v23MetaState();
+    if(state.roster.length >= state.v23.kennelSlots){ log('No empty kennel slot. Expand the kennel first.'); return; }
+    const name = v23Safe(($('newRaiderName')?.value || '').trim(), `Raider ${state.v23.raiderCounter}`);
+    const breed = $('newRaiderBreed')?.value || 'shiba';
+    const color = $('newRaiderColor')?.value || Object.keys(breedDef(breed).colors)[0];
+    const id = 'raider' + state.v23.raiderCounter++;
+    state.roster.push({id, name, breed, color, level:1, xp:0, xpNext:40, bond:0, injuries:[]});
+    state.dogId = id;
+    state.injuries = [];
+    log(`Created new raider: ${name} the ${breedDef(breed).label}.`);
+    save(); render();
+  }
+  window.createRaider = createRaider;
+
+  function populateColorSelect(){
+    const breed = $('newRaiderBreed')?.value || 'shiba';
+    const select = $('newRaiderColor');
+    if(!select) return;
+    const old = select.value;
+    select.innerHTML = colorOptionsForBreed(breed).map(c => `<option value="${c.id}">${c.id}</option>`).join('');
+    if([...select.options].some(o => o.value === old)) select.value = old;
+  }
+
+  // Preserve original functions
+  const __origSave = save;
+  const __origLoad = load;
+  const __origRender = render;
+  const __origApplyUpgrades = applyUpgrades;
+  const __origAddXp = addXp;
+  const __origEndRaid = endRaid;
+  const __origStartRaid = startRaid;
+  const __origAddRaidLoot = addRaidLoot;
+  const __origResetSave = resetSave;
+
+  // Load/save extra meta
+  function saveV23Meta(){
+    syncRaiderFromState();
+    v23MetaState();
+    const meta = {
+      roster: state.roster,
+      v23: state.v23,
+    };
+    localStorage.setItem('barkRaidersMetaV23', JSON.stringify(meta));
+  }
+  function loadV23Meta(){
+    try{
+      const meta = JSON.parse(localStorage.getItem('barkRaidersMetaV23') || '{}');
+      if(meta.roster) state.roster = meta.roster;
+      if(meta.v23) state.v23 = {...(state.v23||{}), ...meta.v23};
+    }catch(e){ console.warn('Could not load v23 meta', e); }
+    ensureRoster();
+  }
+
+  save = function(){ __origSave(); saveV23Meta(); };
+  resetSave = function(){ localStorage.removeItem('barkRaidersMetaV23'); __origResetSave(); };
+
+  currentDogDef = function(){
+    ensureRoster();
+    const r = currentRaider();
+    const b = breedDef(r.breed);
+    return {
+      name:r.name,
+      breed:b.label,
+      sprite:buildDogSprite(r.breed, r.color),
+      desc:b.role,
+      hp:b.hp || 0,
+      attack:b.attack || 0,
+      defence:b.defence || 0,
+      crit:b.crit || 0,
+      speed:b.speed || 0,
+      carry:b.carry || 0,
+      scout:b.scout || 0,
+      rare:b.rare || 0,
+      extract:b.extract || 0,
+      heal:b.heal || 0,
+      colorLabel:r.color,
+    };
+  };
+
+  isDogUnlocked = function(id){ ensureRoster(); return state.roster.some(r => r.id === id); };
+  ensureSelectedDogUnlocked = function(){ ensureRoster(); if(!state.roster.some(r => r.id === state.dogId)) state.dogId = state.roster[0].id; };
+
+  renderDogOptions = function(){
+    ensureRoster();
+    $('dogSelect').innerHTML = state.roster.map(r => {
+      const breed = breedDef(r.breed);
+      const injured = r.injuries?.length ? ` · 🩹 ${r.injuries.length}` : '';
+      return `<option value="${r.id}" ${r.id===state.dogId?'selected':''}>${r.name} — ${breed.label} (${r.color})${injured}</option>`;
+    }).join('');
+  };
+
+  applyUpgrades = function(){
+    ensureRoster();
+    const r = currentRaider();
+    state.injuries = [...(r.injuries || [])];
+    state.dog.level = r.level || 1;
+    state.dog.xp = r.xp || 0;
+    state.dog.xpNext = r.xpNext || 40;
+    __origApplyUpgrades();
+    // breed-special passive
+    if(r.breed === 'lab') state.dog.healPower = (state.dog.healPower || 0) + 4;
+    syncRaiderFromState();
+  };
+
+  addXp = function(amount){
+    __origAddXp(amount);
+    const r = currentRaider();
+    r.level = state.dog.level;
+    r.xp = state.dog.xp;
+    r.xpNext = state.dog.xpNext;
+    r.bond = (r.bond || 0) + Math.max(1, Math.floor(amount / 5));
+    saveV23Meta();
+  };
+
+  addRaidLoot = function(type, amount, source){
+    const mult = masteryBonusMultiplier(biomeKey());
+    const boosted = Math.max(1, Math.round(amount * mult));
+    return __origAddRaidLoot(type, boosted, source);
+  };
+
+  startRaid = function(){
+    ensureRoster();
+    selectRaider($('dogSelect').value || state.dogId);
+    return __origStartRaid();
+  };
+
+  endRaid = function(success, bossClear=false, floorClear=false){
+    const bk = biomeKey();
+    const beforeLvl = masteryFor(bk).level;
+    const wasAuto = state.autoRaid;
+    __origEndRaid(success, bossClear, floorClear);
+    if(success) awardBiomeMastery(bk, bossClear ? 12 : floorClear ? 8 : 4);
+    else awardBiomeMastery(bk, 2);
+    const afterLvl = masteryFor(bk).level;
+    if(afterLvl > beforeLvl) pushDialogue(`Base radio: "${BIOMES[bk].name} routes are getting familiar."`);
+    syncRaiderFromState();
+    saveV23Meta();
+    if(!wasAuto) render();
+  };
+
+  function renderCreatorPanel(){
+    const options = v23BreedKeys().map(k => `<option value="${k}">${breedDef(k).label} — ${breedDef(k).role}</option>`).join('');
+    $('creatorPanel').innerHTML = `
+      <div class="creator-grid">
+        <label><span>Name</span><input id="newRaiderName" maxlength="18" placeholder="Name your raider"></label>
+        <label><span>Breed</span><select id="newRaiderBreed">${options}</select></label>
+        <label><span>Colour</span><select id="newRaiderColor"></select></label>
+        <div class="creator-actions">
+          <button onclick="createRaider()">Create Raider</button>
+          <button class="ghost" onclick="buyKennelSlot()">Buy Kennel Slot</button>
+        </div>
+      </div>
+      <p class="muted tiny">Kennel slots: ${state.v23.kennelSlots} · Roster size: ${state.roster.length}</p>`;
+    populateColorSelect();
+    $('newRaiderBreed').addEventListener('change', populateColorSelect);
+  }
+
+  function renderRosterPanel(){
+    $('rosterPanel').innerHTML = state.roster.map(r => {
+      const breed = breedDef(r.breed);
+      const selected = r.id === state.dogId;
+      const injuries = r.injuries?.length ? r.injuries.map(i => i.name).join(', ') : 'Healthy';
+      return `<div class="upgrade ${selected ? 'quest-complete' : ''}">
+        <div class="roster-card">
+          <img class="mini-dog" src="${buildDogSprite(r.breed, r.color)}" alt="${r.name}">
+          <div>
+            <h3>${r.name}</h3>
+            <p>${breed.label} · ${r.color}</p>
+            <p>Lv.${r.level} · Bond ${r.bond || 0}</p>
+            <p>${injuries}</p>
+          </div>
+        </div>
+        <button ${selected?'disabled':''} onclick="selectRosterRaider('${r.id}')">${selected?'Active':'Select'}</button>
+      </div>`;
+    }).join('');
+  }
+
+  window.selectRosterRaider = function(id){
+    selectRaider(id);
+    save(); render();
+  };
+
+  function renderRecoveryPanel(){
+    const injured = state.roster.filter(r => r.injuries?.length);
+    $('recoveryPanel').innerHTML = injured.length ? injured.map(r => `
+      <div class="upgrade">
+        <div>
+          <h3>${r.name}</h3>
+          <p>${r.injuries.map(i => `${i.name} (${i.turns})`).join(', ')}</p>
+          <p>Heal cost: ${4 + r.injuries.length * 2} medicine</p>
+        </div>
+        <button onclick="healRaider('${r.id}')">Treat</button>
+      </div>`).join('') : '<p class="muted">No raiders currently need treatment.</p>';
+  }
+
+  function renderProfileOptions(){
+    v23MetaState();
+    const profiles = state.v23.dispatchProfiles;
+    $('profileSelect').innerHTML = ['<option value="">No profile selected</option>'].concat(
+      profiles.map((p, i) => `<option value="${i}">${p.name}</option>`)
+    ).join('');
+  }
+
+  function captureCurrentProfile(name){
+    return {
+      name,
+      zoneId: state.zoneId,
+      floorId: state.floorId,
+      planId: state.planId,
+      contractId: state.contractId,
+      autoExtractRule: state.autoExtractRule,
+      selectedConsumables: [...state.selectedConsumables],
+      lootFilter: {...state.lootFilter},
+      dogId: state.dogId,
+    };
+  }
+
+  function applyProfile(profile){
+    if(!profile) return;
+    state.zoneId = profile.zoneId ?? state.zoneId;
+    state.floorId = profile.floorId ?? state.floorId;
+    state.planId = profile.planId || state.planId;
+    state.contractId = profile.contractId || state.contractId;
+    state.autoExtractRule = profile.autoExtractRule || state.autoExtractRule;
+    state.selectedConsumables = [...(profile.selectedConsumables || [])];
+    state.lootFilter = {...state.lootFilter, ...(profile.lootFilter || {})};
+    if(profile.dogId && state.roster.some(r => r.id === profile.dogId)) state.dogId = profile.dogId;
+    save(); render();
+  }
+
+  window.saveDispatchProfile = function(){
+    v23MetaState();
+    const name = prompt('Profile name?', `Profile ${state.v23.dispatchProfiles.length + 1}`);
+    if(!name) return;
+    state.v23.dispatchProfiles.push(captureCurrentProfile(name.trim()));
+    save(); render();
+  };
+  window.loadDispatchProfile = function(){
+    const idx = Number($('profileSelect').value);
+    if(Number.isNaN(idx)) return;
+    applyProfile(state.v23.dispatchProfiles[idx]);
+  };
+  window.deleteDispatchProfile = function(){
+    const idx = Number($('profileSelect').value);
+    if(Number.isNaN(idx)) return;
+    state.v23.dispatchProfiles.splice(idx, 1);
+    save(); render();
+  };
+
+  function renderMarketPanel(){
+    const rep = state.v23.market.rep || 0;
+    const catalog = marketCatalog();
+    const sells = ['wood','metal','fabric','medicine','gunParts'].map(type => `
+      <div class="upgrade">
+        <div>
+          <h3>Sell ${type}</h3>
+          <p>Trade up to ${type==='gunParts'?1:5} for food/water and rep.</p>
+          <p>You have: ${state.resources[type] || 0}</p>
+        </div>
+        <button ${state.resources[type] ? '' : 'disabled'} onclick="sellResource('${type}')">Sell</button>
+      </div>
+    `).join('');
+    $('marketPanel').innerHTML = `
+      <div class="upgrade market-header">
+        <div>
+          <h3>Scav Market</h3>
+          <p>Trader reputation: ${rep.toFixed(1)}</p>
+          <p>Higher rep improves buy prices.</p>
+        </div>
+        <button disabled>Rep Discount ${Math.min(20, rep*2).toFixed(0)}%</button>
+      </div>
+      ${catalog.map(item => `
+        <div class="upgrade">
+          <div>
+            <h3>${item.label}</h3>
+            <p>${item.desc}</p>
+            <p>Gives: ${costText(item.gives)}</p>
+            <p>Cost: ${marketCostText(item.cost, item.markdown)}</p>
+          </div>
+          <button ${canAffordAdjusted(item.cost, item.markdown) ? '' : 'disabled'} onclick="buyMarketItem('${item.id}')">Buy</button>
+        </div>`).join('')}
+      ${sells}`;
+  }
+
+  function renderRaiderStatus(){
+    const r = currentRaider();
+    const breed = breedDef(r.breed);
+    $('raiderStatus').innerHTML = `
+      <div class="gear">
+        <img class="mini-dog large" src="${buildDogSprite(r.breed, r.color)}" alt="${r.name}">
+        <strong>${r.name}</strong>
+        <span>${breed.label} · ${r.color}</span>
+        <span>Lv.${r.level} · Bond ${r.bond || 0}</span>
+      </div>
+      <div class="gear">
+        <strong>Breed Trait</strong>
+        <span>${breed.role}</span>
+        <span>Stat lean: ${breed.attack>0?'+ATK ':''}${breed.defence>0?'+DEF ':''}${breed.speed>0?'+SPD ':''}${breed.extract>0?'+EXTRACT ':''}${breed.rare>0?'+RARE ':''}${breed.carry>0?'+CARRY ':''}</span>
+      </div>
+      <div class="gear">
+        <strong>Condition</strong>
+        <span>${(r.injuries?.length) ? r.injuries.map(i=>i.name).join(', ') : 'Healthy'}</span>
+        <span>Roster size ${state.roster.length} / ${state.v23.kennelSlots}</span>
+      </div>`;
+  }
+
+  function renderMasteryPanel(){
+    const cards = Object.keys(BIOMES).map(key => {
+      const m = masteryFor(key);
+      const next = m.level * 20;
+      const perks = m.level >= 10 ? '+15% loot, elite boss chance' : m.level >= 5 ? '+10% loot, better room odds' : m.level >= 2 ? '+5% loot' : 'No mastery bonus yet';
+      return `<div class="intel-card">
+        <strong>${BIOMES[key].icon} ${BIOMES[key].name}</strong>
+        <span>Level ${m.level}</span>
+        <span>XP ${m.xp} / ${next}</span>
+        <span>${perks}</span>
+      </div>`;
+    }).join('');
+    $('masteryPanel').innerHTML = `<div class="intel-card wide"><strong>Biome Mastery</strong><span>Keep clearing floors to improve loot and future biome perks.</span></div>${cards}`;
+  }
+
+  function renderBountyBoard(){
+    const pool = bossPoolForBiome();
+    const tiles = pool.map((b, i) => `<div class="intel-card">
+      <strong>${b.icon} ${b.name}</strong>
+      <span>Mechanic: ${bossMechanicLabel(b.behavior)}</span>
+      <span>Bring: ${i % 2 ? 'Emergency Medkit' : 'Smoke Biscuit'}, ${i % 3 ? 'Lucky Treat' : 'Trader Token'}</span>
+      <span>Bounty: ${costText(b.reward)}</span>
+    </div>`).join('');
+    $('bountyBoard').innerHTML = `<div class="intel-card wide"><strong>Bounty Board</strong><span>Boss floors: 3, 6, 10. Higher floors increase rewards and danger.</span></div>${tiles}`;
+  }
+
+  function renderCustomSprites(){
+    const d = currentDogDef();
+    ['heroDogSprite','combatDogSprite'].forEach(id => { if($(id)) $(id).src = d.sprite; });
+    if($('dogName')) $('dogName').textContent = d.name;
+    if($('dogBreedText')) $('dogBreedText').textContent = `Breed: ${d.breed} · ${d.colorLabel}`;
+    if($('combatDogName')) $('combatDogName').textContent = d.name;
+    if($('combatDogRole')) $('combatDogRole').textContent = `${d.breed} · ${d.colorLabel}`;
+  }
+
+  renderDispatchSummary = (function(orig){
+    return function(){
+      orig();
+      const container = $('dispatchSummary');
+      if(!container) return;
+      const r = currentRaider();
+      const extra = `<div class="dispatch-tile"><strong>Raider Bond</strong><span>${r.bond || 0}</span></div>`;
+      container.innerHTML = container.innerHTML.replace('</div>', `${extra}</div>`);
+    };
+  })(renderDispatchSummary);
+
+  render = function(){
+    ensureRoster();
+    v23MetaState();
+    __origRender();
+    renderProfileOptions();
+    renderCreatorPanel();
+    renderRosterPanel();
+    renderRecoveryPanel();
+    renderMarketPanel();
+    renderRaiderStatus();
+    renderMasteryPanel();
+    renderBountyBoard();
+    renderCustomSprites();
+    if($('autoBtn')) $('autoBtn').disabled = false;
+  };
+
+  // Settings/Events
+  if($('saveProfileBtn')) $('saveProfileBtn').addEventListener('click', window.saveDispatchProfile);
+  if($('loadProfileBtn')) $('loadProfileBtn').addEventListener('click', window.loadDispatchProfile);
+  if($('deleteProfileBtn')) $('deleteProfileBtn').addEventListener('click', window.deleteDispatchProfile);
+
+  loadV23Meta();
+  ensureRoster();
+  selectRaider(state.dogId);
+  applyUpgrades();
+  updateGear();
+  render();
+})();
+
+
+
+/* ===== Bark Raiders v0.24 polish extension ===== */
+(function(){
+  function v24Ready(){ return typeof state !== 'undefined' && state.v23; }
+
+  function v24Meta(){
+    if(!state.v24) state.v24 = {};
+    state.v24.factions = state.v24.factions || {
+      traders:{name:'Scav Traders', rep: state.v23?.market?.rep || 0, desc:'Market contacts, medical barter, and black-market gear.'},
+      kennel:{name:'Kennel Union', rep: state.roster?.length || 1, desc:'Your home base and raider support network.'},
+      rats:{name:'Rat Court', rep:0, desc:'Sewer rivals. Beating rat bosses reduces their grip.'},
+      crows:{name:'Crow Syndicate', rep:0, desc:'Thieves, spies, and rare loot brokers.'},
+      rustclaw:{name:'Rustclaw Crew', rep:0, desc:'Factory scavengers, armour smugglers, and machine hoarders.'},
+    };
+    return state.v24;
+  }
+
+  function v24BuildSprite(breedKey, colorKey, accent='#8bd77f', pose='idle'){
+    const breed = breedDef(breedKey);
+    const coat = breed.colors[colorKey] || Object.values(breed.colors)[0] || '#c48a57';
+    const secondary = '#f2e8da';
+    const stroke = '#1c1713';
+    const lean = pose === 'run' ? ' transform="skewX(-4)"' : '';
+    const muzzle = pose === 'combat' ? '<ellipse cx="34" cy="34" rx="12" ry="9" fill="'+secondary+'" stroke="'+stroke+'" stroke-width="2"/>' :
+                   '<ellipse cx="32" cy="35" rx="11" ry="9" fill="'+secondary+'" stroke="'+stroke+'" stroke-width="2"/>';
+    const ears = breedKey === 'dachshund'
+      ? 'M18 20 C13 14 10 13 10 8 C15 9 18 13 22 18 Z M42 20 C47 14 50 13 50 8 C45 9 42 13 38 18 Z'
+      : breedKey === 'collie'
+      ? 'M16 18 L10 4 L22 14 Z M42 18 L54 4 L42 14 Z'
+      : 'M18 20 L12 10 L22 16 Z M42 20 L52 10 L42 16 Z';
+    const body = breedKey === 'dachshund'
+      ? '<rect x="12" y="24" width="40" height="20" rx="11" fill="'+coat+'" stroke="'+stroke+'" stroke-width="2"'+lean+'/>'
+      : breedKey === 'greyhound'
+      ? '<ellipse cx="32" cy="36" rx="21" ry="14" fill="'+coat+'" stroke="'+stroke+'" stroke-width="2"'+lean+'/>'
+      : '<ellipse cx="32" cy="34" rx="18" ry="16" fill="'+coat+'" stroke="'+stroke+'" stroke-width="2"'+lean+'/>';
+    const weapon = pose === 'combat'
+      ? '<rect x="43" y="38" width="18" height="5" rx="2" fill="#464d55" stroke="'+stroke+'" stroke-width="2"/><circle cx="60" cy="40" r="2" fill="'+accent+'"/>'
+      : '<rect x="44" y="42" width="14" height="4" rx="2" fill="#464d55" stroke="'+stroke+'" stroke-width="2"/>';
+    const legs = pose === 'run'
+      ? '<path d="M21 53 L15 62 M41 53 L49 62" stroke="'+stroke+'" stroke-width="3" stroke-linecap="round"/>'
+      : '<path d="M22 55 L20 63 M42 55 L44 63" stroke="'+stroke+'" stroke-width="3" stroke-linecap="round"/>';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <rect width="64" height="64" rx="10" fill="rgba(0,0,0,0)"/>
+      <path d="${ears}" fill="${coat}" stroke="${stroke}" stroke-width="2"/>
+      ${body}
+      ${muzzle}
+      <circle cx="26" cy="31" r="2" fill="${stroke}"/><circle cx="39" cy="31" r="2" fill="${stroke}"/>
+      <path d="M29 40 Q32 42 35 40" stroke="${stroke}" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M18 40 Q32 34 46 40 L44 55 Q32 59 20 55 Z" fill="#535f6c" stroke="${stroke}" stroke-width="2"/>
+      <path d="M21 44 H43" stroke="${accent}" stroke-width="2.5"/>
+      <rect x="8" y="34" width="10" height="15" rx="3" fill="#7a5a3a" stroke="${stroke}" stroke-width="2"/>
+      ${weapon}
+      ${legs}
+    </svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  function v24CurrentRaider(){ return (typeof currentRaider === 'function') ? currentRaider() : null; }
+
+  function v24PreviewValues(){
+    return {
+      name: ($('modalRaiderName')?.value || '').trim() || 'New Raider',
+      breed: $('modalRaiderBreed')?.value || 'shiba',
+      color: $('modalRaiderColor')?.value || 'red',
+      accent: $('modalRaiderAccent')?.value || '#8bd77f',
+    };
+  }
+
+  function v24PopulateCreator(){
+    if(!$('modalRaiderBreed')) return;
+    const breedOptions = Object.keys(BREEDS_V23 || {}).map(k => `<option value="${k}">${breedDef(k).label} — ${breedDef(k).role}</option>`).join('');
+    if(!$('modalRaiderBreed').innerHTML.trim()) $('modalRaiderBreed').innerHTML = breedOptions;
+    v24PopulateModalColours();
+    v24RenderCreatorPreview();
+  }
+
+  function v24PopulateModalColours(){
+    const breed = $('modalRaiderBreed')?.value || 'shiba';
+    const select = $('modalRaiderColor');
+    if(!select) return;
+    const old = select.value;
+    select.innerHTML = Object.entries(breedDef(breed).colors).map(([id, hex]) => `<option value="${id}">${id}</option>`).join('');
+    if([...select.options].some(o => o.value === old)) select.value = old;
+  }
+
+  function v24RenderCreatorPreview(){
+    const v = v24PreviewValues();
+    const breed = breedDef(v.breed);
+    if($('creatorPreviewSprite')) $('creatorPreviewSprite').src = v24BuildSprite(v.breed, v.color, v.accent, 'combat');
+    if($('creatorPreviewName')) $('creatorPreviewName').textContent = v.name;
+    if($('creatorPreviewBreed')) $('creatorPreviewBreed').textContent = `${breed.label} · ${v.color}`;
+    if($('creatorPreviewRole')) $('creatorPreviewRole').textContent = breed.role;
+    if($('creatorStatPreview')) {
+      $('creatorStatPreview').innerHTML = [
+        ['HP', breed.hp || 0], ['ATK', breed.attack || 0], ['DEF', breed.defence || 0], ['CRIT', breed.crit || 0],
+        ['SPD', breed.speed || 0], ['CARRY', breed.carry || 0], ['SCOUT', breed.scout || 0], ['RARE', breed.rare || 0], ['EXTRACT', breed.extract || 0],
+      ].map(([k,v]) => `<div class="stat"><strong>${v>0?'+':''}${v}</strong><span>${k}</span></div>`).join('');
+    }
+  }
+
+  function v24OpenCreator(){
+    v24PopulateCreator();
+    $('creatorModal').classList.remove('hidden');
+  }
+  function v24CloseCreator(){ $('creatorModal').classList.add('hidden'); }
+
+  function v24CreateRaiderFromModal(){
+    ensureRoster();
+    v23MetaState();
+    if(state.roster.length >= state.v23.kennelSlots){ log('No empty kennel slot. Expand the kennel first.'); return; }
+    const v = v24PreviewValues();
+    const id = 'raider' + state.v23.raiderCounter++;
+    state.roster.push({id, name:v.name, breed:v.breed, color:v.color, accent:v.accent, level:1, xp:0, xpNext:40, bond:0, injuries:[]});
+    state.dogId = id;
+    state.injuries = [];
+    v24CloseCreator();
+    log(`Created new raider: ${v.name} the ${breedDef(v.breed).label}.`);
+    save(); render();
+  }
+
+  function v24RenderWorldMap(){
+    if(!$('worldMapPanel')) return;
+    v24Meta();
+    const keys = Object.keys(BIOMES);
+    $('worldMapPanel').innerHTML = keys.map((key, index) => {
+      const b = BIOMES[key];
+      const max = maxUnlockedFloor(key);
+      const mastery = masteryFor(key);
+      const faction = key === 'sewer' ? 'Rat Court' : key === 'factory' ? 'Rustclaw Crew' : key === 'city' ? 'Crow Syndicate' : 'Kennel Union';
+      const floors = Array.from({length:10},(_,i)=>{
+        const f=i+1;
+        return `<span class="${f<=max?'unlocked':'locked'} ${[3,6,10].includes(f)?'boss-floor':''}">F${f}</span>`;
+      }).join('');
+      return `<button class="world-biome ${state.zoneId===index?'active':''}" onclick="selectWorldBiome(${index})">
+        <strong>${b.icon} ${b.name}</strong>
+        <span>${b.desc}</span>
+        <span>Mastery Lv.${mastery.level} · ${faction}</span>
+        <div class="floor-pips">${floors}</div>
+      </button>`;
+    }).join('');
+  }
+  window.selectWorldBiome = function(index){
+    state.zoneId = index;
+    state.floorId = clamp(state.floorId || 1, 1, maxUnlockedFloor());
+    generateMap();
+    save();
+    render();
+    switchTab('raid');
+  };
+
+  function v24RenderFactionPanel(){
+    if(!$('factionPanel')) return;
+    const meta = v24Meta();
+    const tradersRep = state.v23?.market?.rep || 0;
+    meta.factions.traders.rep = tradersRep;
+    meta.factions.kennel.rep = state.roster?.length || 1;
+    const html = Object.values(meta.factions).map(f => `<div class="intel-card">
+      <strong>${f.name}</strong>
+      <span>${f.desc}</span>
+      <span>Rep / Influence: ${Number(f.rep||0).toFixed(1)}</span>
+    </div>`).join('');
+    $('factionPanel').innerHTML = `<div class="intel-card wide"><strong>Factions</strong><span>Light faction flavour for traders, bosses, and future reputation systems.</span></div>${html}`;
+  }
+
+  const _v24Render = render;
+  render = function(){
+    _v24Render();
+    v24RenderWorldMap();
+    v24RenderFactionPanel();
+    const r = v24CurrentRaider();
+    if(r){
+      const accent = r.accent || '#8bd77f';
+      const pose = state.mode === 'combat' ? 'combat' : state.running ? 'run' : 'idle';
+      const sprite = v24BuildSprite(r.breed, r.color, accent, pose);
+      ['heroDogSprite','combatDogSprite'].forEach(id => { if($(id)) $(id).src = sprite; });
+      if($('creatorPreviewSprite') && !$('creatorModal').classList.contains('hidden')) v24RenderCreatorPreview();
+    }
+  };
+
+  const _v24CreateRaider = window.createRaider;
+  window.createRaider = function(){ v24OpenCreator(); };
+  window.v24OpenCreator = v24OpenCreator;
+  window.v24CloseCreator = v24CloseCreator;
+  window.v24CreateRaiderFromModal = v24CreateRaiderFromModal;
+
+  if($('openCreatorBtn')) $('openCreatorBtn').addEventListener('click', v24OpenCreator);
+  if($('closeCreatorBtn')) $('closeCreatorBtn').addEventListener('click', v24CloseCreator);
+  if($('createRaiderModalBtn')) $('createRaiderModalBtn').addEventListener('click', v24CreateRaiderFromModal);
+  ['modalRaiderName','modalRaiderBreed','modalRaiderColor','modalRaiderAccent'].forEach(id => {
+    const el=$(id);
+    if(el) el.addEventListener('input', () => { if(id==='modalRaiderBreed') v24PopulateModalColours(); v24RenderCreatorPreview(); });
+    if(el) el.addEventListener('change', () => { if(id==='modalRaiderBreed') v24PopulateModalColours(); v24RenderCreatorPreview(); });
+  });
+
+  log('v0.24 polish loaded: creator modal, world map, sprite poses, and faction flavour.');
+  render();
+})();
+
+
+
+/* ===== Bark Raiders v0.25 Market/Faction/Profile extension ===== */
+(function(){
+  const TRADERS_V25 = {
+    milo:{
+      name:'Milo the Mule',
+      faction:'traders',
+      role:'Bulk resources and boring-but-vital supplies.',
+      greeting:'Milo: "Heavy bags, honest-ish prices."',
+      speciality:['wood','fabric','water'],
+      stock:[
+        {id:'milo_wood', label:'Stacked Timber Pallet', desc:'+24 wood for building and room forcing.', gives:{wood:24}, cost:{food:8, water:8, metal:10}},
+        {id:'milo_fabric', label:'Rolled Fabric Bale', desc:'+16 fabric for packs and collars.', gives:{fabric:16}, cost:{food:6, water:6, wood:8}},
+        {id:'milo_water', label:'Clean Water Jugs', desc:'+14 water.', gives:{water:14}, cost:{food:6, wood:8}},
+      ]
+    },
+    patch:{
+      name:'Patch the Surgeon',
+      faction:'kennel',
+      role:'Medicine, injury treatment, and recovery supplies.',
+      greeting:'Patch: "Stop bleeding on my floor and we can talk."',
+      speciality:['medicine'],
+      stock:[
+        {id:'patch_meds', label:'Sterile Med Kit', desc:'+8 medicine.', gives:{medicine:8}, cost:{food:8, water:8, fabric:6}},
+        {id:'patch_recovery', label:'Recovery Voucher', desc:'Heals the active raider if injured.', action:'healActive', cost:{medicine:6, fabric:4, water:4}},
+        {id:'patch_bandages', label:'Field Bandage Bundle', desc:'+4 medicine and +4 fabric.', gives:{medicine:4, fabric:4}, cost:{food:7, water:5}},
+      ]
+    },
+    bolt:{
+      name:'Bolt the Badger',
+      faction:'rustclaw',
+      role:'Gun parts, ammo, and dangerous upgrades.',
+      greeting:'Bolt: "If it rattles, it probably still shoots."',
+      speciality:['gunParts','ammo','metal'],
+      stock:[
+        {id:'bolt_parts', label:'Gun Parts Box', desc:'+7 gun parts.', gives:{gunParts:7}, cost:{metal:18, wood:10, medicine:3}},
+        {id:'bolt_ammo', label:'Ammo Tin', desc:'+26 ammo.', gives:{ammo:26}, cost:{metal:12, gunParts:2, food:5}},
+        {id:'bolt_scrap', label:'Machined Scrap', desc:'+18 metal.', gives:{metal:18}, cost:{wood:12, water:6}},
+      ]
+    },
+    rook:{
+      name:'Rook the Crow',
+      faction:'crows',
+      role:'Rare goods, charms, and suspiciously cheap secrets.',
+      greeting:'Rook: "No refunds. No witnesses. Lovely doing business."',
+      speciality:['rare','gunParts'],
+      stock:[
+        {id:'rook_lucky', label:'Lucky Charm Cache', desc:'Adds a random charm to inventory.', action:'randomCharm', cost:{gunParts:6, medicine:4, fabric:8}},
+        {id:'rook_map', label:'Boss Intel Scrap', desc:'Temporary intel: reveals boss-style info and improves Crow rep.', action:'intel', cost:{wood:8, metal:8, food:4}},
+        {id:'rook_parts', label:'Shiny Gun Bits', desc:'+4 gun parts, pricey but useful.', gives:{gunParts:4}, cost:{medicine:5, metal:12, fabric:6}},
+      ]
+    }
+  };
+
+  function v25Meta(){
+    if(!state.v25) state.v25 = {};
+    state.v25.activeTrader = state.v25.activeTrader || 'milo';
+    state.v25.profileMode = state.v25.profileMode || 'manual';
+    state.v25.bossDialogues = state.v25.bossDialogues || [];
+    if(!state.v24) state.v24 = {};
+    if(!state.v24.factions){
+      state.v24.factions = {
+        traders:{name:'Scav Traders', rep:0, desc:'Market contacts, medical barter, and black-market gear.'},
+        kennel:{name:'Kennel Union', rep:1, desc:'Your home base and raider support network.'},
+        rats:{name:'Rat Court', rep:0, desc:'Sewer rivals. Beating rat bosses reduces their grip.'},
+        crows:{name:'Crow Syndicate', rep:0, desc:'Thieves, spies, and rare loot brokers.'},
+        rustclaw:{name:'Rustclaw Crew', rep:0, desc:'Factory scavengers, armour smugglers, and machine hoarders.'},
+      };
+    }
+    return state.v25;
+  }
+
+  function traderRep(faction){
+    v25Meta();
+    return Number(state.v24.factions?.[faction]?.rep || 0);
+  }
+  function addFactionRep(faction, amount){
+    v25Meta();
+    if(!state.v24.factions[faction]) return;
+    state.v24.factions[faction].rep = Math.max(-20, Math.min(50, traderRep(faction) + amount));
+  }
+  function traderDiscount(faction){
+    return Math.max(-15, Math.min(25, Math.floor(traderRep(faction) * 1.5)));
+  }
+  function adjustedCost(cost, discount){
+    const out = {};
+    Object.entries(cost || {}).forEach(([k,v]) => out[k] = Math.max(1, Math.round(v * (1 - discount/100))));
+    return out;
+  }
+  function canAffordV25(cost){ return Object.entries(cost || {}).every(([k,v]) => (state.resources[k] || 0) >= v); }
+  function payV25(cost){ Object.entries(cost || {}).forEach(([k,v]) => state.resources[k] -= v); }
+
+  function buyTraderItem(traderId, itemId){
+    const trader = TRADERS_V25[traderId];
+    if(!trader) return;
+    const item = trader.stock.find(x => x.id === itemId);
+    if(!item) return;
+    const discount = traderDiscount(trader.faction);
+    const cost = adjustedCost(item.cost, discount);
+    if(!canAffordV25(cost)){ log(`${trader.name}: "Come back with a fuller bag."`); return; }
+    payV25(cost);
+    if(item.gives) Object.entries(item.gives).forEach(([k,v]) => state.resources[k] = (state.resources[k] || 0) + v);
+    if(item.action === 'healActive'){
+      const r = typeof currentRaider === 'function' ? currentRaider() : null;
+      if(r && r.injuries?.length){
+        r.injuries = [];
+        state.injuries = [];
+        log(`${trader.name} patches up ${r.name}.`);
+      } else {
+        state.resources.medicine += 2;
+        log(`${trader.name}: "No injury? Fine, take spare meds."`);
+      }
+    }
+    if(item.action === 'randomCharm'){
+      const charms = [
+        {name:'Rook Feather Tag', rarity:'Rare', crit:6, rare:6, extract:0, score:18},
+        {name:'Black Market Bell', rarity:'Rare', crit:2, rare:10, extract:3, score:20},
+        {name:'Crow-Eye Charm', rarity:'Epic', crit:4, rare:14, extract:4, score:28},
+      ];
+      const charm = charms[Math.floor(Math.random()*charms.length)];
+      state.equipmentInventory.charm.push(charm);
+      log(`${trader.name} sells ${charm.name}.`);
+    }
+    if(item.action === 'intel'){
+      state.research.bossMap = true;
+      log(`${trader.name}: "Boss routes marked. Do not ask where I got them."`);
+    }
+    addFactionRep(trader.faction, 1);
+    if(trader.faction === 'crows') addFactionRep('traders', -0.2);
+    if(trader.faction === 'rustclaw') addFactionRep('rustclaw', 0.5);
+    state.v23.market.rep = Math.max(state.v23.market.rep || 0, traderRep('traders'));
+    pushDialogue(trader.greeting);
+    save(); render();
+  }
+  window.buyTraderItem = buyTraderItem;
+
+  function selectTrader(id){
+    v25Meta();
+    state.v25.activeTrader = id;
+    const trader = TRADERS_V25[id];
+    if(trader) pushDialogue(trader.greeting);
+    save(); render();
+  }
+  window.selectTrader = selectTrader;
+
+  function renderTraderList(){
+    if(!$('traderList')) return;
+    v25Meta();
+    $('traderList').innerHTML = Object.entries(TRADERS_V25).map(([id,t]) => `
+      <button class="trader-button ${state.v25.activeTrader===id?'active':''}" onclick="selectTrader('${id}')">
+        <strong>${t.name}</strong>
+        <span>${t.role}</span>
+        <span>Rep ${traderRep(t.faction).toFixed(1)} · Discount ${traderDiscount(t.faction)}%</span>
+      </button>
+    `).join('');
+  }
+
+  function renderTraderDetail(){
+    if(!$('traderDetail') || !$('traderStock')) return;
+    const id = state.v25.activeTrader || 'milo';
+    const trader = TRADERS_V25[id] || TRADERS_V25.milo;
+    const discount = traderDiscount(trader.faction);
+    $('traderDetail').innerHTML = `<div class="intel-card wide">
+      <strong>${trader.name}</strong>
+      <span>${trader.role}</span>
+      <span>${trader.greeting}</span>
+      <span>Faction: ${state.v24.factions[trader.faction]?.name || trader.faction} · Rep ${traderRep(trader.faction).toFixed(1)} · Price modifier ${discount}%</span>
+    </div>`;
+    $('traderStock').innerHTML = trader.stock.map(item => {
+      const cost = adjustedCost(item.cost, discount);
+      const gives = item.gives ? costText(item.gives) : item.action === 'healActive' ? 'Treat active raider' : item.action === 'randomCharm' ? 'Random charm' : 'Boss intel';
+      return `<div class="upgrade trader-stock-card">
+        <div>
+          <h3>${item.label}</h3>
+          <p>${item.desc}</p>
+          <p>Gives: ${gives}</p>
+          <p>Cost: ${costText(cost)}</p>
+        </div>
+        <button ${canAffordV25(cost) ? '' : 'disabled'} onclick="buyTraderItem('${id}','${item.id}')">Buy</button>
+      </div>`;
+    }).join('');
+  }
+
+  function factionForBoss(enemy){
+    const name = (enemy?.name || '').toLowerCase();
+    if(name.includes('rat') || name.includes('gutter') || name.includes('drain')) return 'rats';
+    if(name.includes('crow') || name.includes('baron') || name.includes('rook')) return 'crows';
+    if(name.includes('gear') || name.includes('furnace') || name.includes('trolley')) return 'rustclaw';
+    return 'kennel';
+  }
+
+  const bossIntroLines = {
+    summon:['The floor trembles with tiny claws.', 'Rat Court chant echoes through the dark.'],
+    lootStealBoss:['A shadow circles overhead, laughing.', 'Something shiny vanishes before the fight even starts.'],
+    bleedBoss:['A blade scrapes across concrete.', 'The boss grins like this is personal.'],
+    poisonBoss:['The air turns sour and green.', 'Every puddle suddenly looks alive.'],
+    stealBoss:['A paw reaches for your pack.', 'Scrap clatters somewhere behind the boss.'],
+    armourCheck:['Metal plates grind. This one wants a real test.', 'Weak weapons will not impress this brute.'],
+    hazards:['The room becomes a deathtrap.', 'Floor hazards spark into life.'],
+    burnBoss:['Heat pours through the doorway.', 'The boss room smells like smoke and fur.'],
+    chaseBoss:['No hiding. No circling. Only running.', 'The boss cuts off the escape routes.'],
+  };
+  const bossDefeatLines = {
+    rats:'Rat Court influence weakens.',
+    crows:'Crow Syndicate loses face.',
+    rustclaw:'Rustclaw Crew loses a hoard.',
+    kennel:'Kennel Union morale rises.',
+  };
+
+  const _v25StartCombat = startCombat;
+  startCombat = function(enemy,bossFight=false,sourceId=null){
+    if(bossFight){
+      const lines = bossIntroLines[enemy.behavior] || ['A boss steps out of the dark.'];
+      const line = lines[Math.floor(Math.random()*lines.length)];
+      state.v25.bossDialogues.unshift(`${enemy.name}: ${line}`);
+      state.v25.bossDialogues = state.v25.bossDialogues.slice(0,8);
+      pushDialogue(`${enemy.name}: "${line}"`);
+    }
+    return _v25StartCombat(enemy,bossFight,sourceId);
+  };
+
+  const _v25WinCombat = winCombat;
+  winCombat = function(e){
+    const wasBoss = !!e.bossFight;
+    const faction = wasBoss ? factionForBoss(e) : null;
+    const name = e.name;
+    _v25WinCombat(e);
+    if(wasBoss){
+      addFactionRep(faction, -2);
+      addFactionRep('kennel', 1);
+      const line = bossDefeatLines[faction] || 'The local faction takes notice.';
+      state.v25.bossDialogues.unshift(`${name} defeated: ${line}`);
+      pushDialogue(`Base radio: "${line}"`);
+      save();
+    }
+  };
+
+  function profileSummary(profile){
+    if(!profile) return 'No profile loaded.';
+    const biome = BIOMES[Object.keys(BIOMES)[profile.zoneId % Object.keys(BIOMES).length]]?.name || 'Unknown';
+    return `${profile.name}: ${biome} F${profile.floorId} · ${RAID_PLANS[profile.planId]?.name || profile.planId} · ${CONTRACTS[profile.contractId]?.name || 'No Contract'}`;
+  }
+
+  function applyQuickProfile(type){
+    ensureRoster();
+    ensureLootFilter();
+    const cityMax = maxUnlockedFloor('city');
+    const key = biomeKey();
+    if(type === 'wood'){
+      state.zoneId = 3 < state.unlockedZones ? 3 : 0;
+      state.floorId = 1;
+      state.planId = 'wood';
+      state.contractId = 'wood';
+      state.autoExtractRule = 'balanced';
+      Object.keys(state.lootFilter).forEach(k => state.lootFilter[k] = ['wood','food','water','medicine'].includes(k));
+    }
+    if(type === 'push'){
+      state.floorId = maxUnlockedFloor(key);
+      state.planId = 'balanced';
+      state.contractId = 'none';
+      state.autoExtractRule = 'safe';
+    }
+    if(type === 'boss'){
+      const max = maxUnlockedFloor(key);
+      state.floorId = [10,6,3].find(f => f <= max) || max;
+      state.planId = 'boss';
+      state.contractId = 'boss';
+      state.autoExtractRule = 'boss';
+      Object.keys(state.lootFilter).forEach(k => state.lootFilter[k] = ['medicine','gunParts','metal','wood'].includes(k));
+    }
+    if(type === 'safe'){
+      state.floorId = Math.max(1, Math.min(2, maxUnlockedFloor(key)));
+      state.planId = 'safe';
+      state.contractId = 'pest';
+      state.autoExtractRule = 'safe';
+    }
+    if(type === 'trader'){
+      state.planId = 'balanced';
+      state.contractId = 'trader';
+      state.autoExtractRule = 'balanced';
+    }
+    state.autoExtract = state.autoExtractRule !== 'off';
+    generateMap(); save(); render();
+  }
+  window.applyQuickProfile = applyQuickProfile;
+
+  function saveProfileNamed(name){
+    v23MetaState();
+    const profile = captureCurrentProfile(name);
+    const existing = state.v23.dispatchProfiles.findIndex(p => p.name === name);
+    if(existing >= 0) state.v23.dispatchProfiles[existing] = profile;
+    else state.v23.dispatchProfiles.push(profile);
+    save(); render();
+  }
+  window.saveProfileNamed = saveProfileNamed;
+
+  function renderProfilePanel(){
+    if(!$('profilePanel')) return;
+    v23MetaState();
+    const idx = Number($('profileSelect')?.value);
+    const profile = Number.isNaN(idx) ? null : state.v23.dispatchProfiles[idx];
+    $('profilePanel').innerHTML = `<div class="gear">
+      <strong>Current Setup</strong>
+      <span>${currentBiome().name} Floor ${currentFloor()} · ${currentPlan().name}</span>
+      <span>Contract: ${currentContract().name} · Auto: ${state.autoExtractRule}</span>
+    </div>
+    <div class="profile-buttons">
+      <button onclick="applyQuickProfile('wood')">Farm Wood</button>
+      <button onclick="applyQuickProfile('push')">Push Floor</button>
+      <button onclick="applyQuickProfile('boss')">Boss Hunt</button>
+      <button onclick="applyQuickProfile('safe')">Safe XP</button>
+      <button onclick="applyQuickProfile('trader')">Trader Run</button>
+    </div>
+    <div class="gear">
+      <strong>Selected Profile</strong>
+      <span>${profileSummary(profile)}</span>
+    </div>`;
+  }
+
+  function renderBossDialoguePanel(){
+    if(!$('bossDialoguePanel')) return;
+    const lines = state.v25.bossDialogues || [];
+    $('bossDialoguePanel').innerHTML = `<div class="intel-card wide">
+      <strong>Boss Dialogue</strong>
+      <span>Recent boss intros, taunts, and faction aftermath.</span>
+    </div>` + (lines.length ? lines.map(line => `<div class="intel-card"><span>${line}</span></div>`).join('') : '<div class="intel-card"><span>No boss dialogue recorded yet.</span></div>');
+  }
+
+  const _v25Render = render;
+  render = function(){
+    _v25Render();
+    v25Meta();
+    renderTraderList();
+    renderTraderDetail();
+    renderProfilePanel();
+    renderBossDialoguePanel();
+  };
+
+  const _v25Save = save;
+  save = function(){
+    _v25Save();
+    try{
+      localStorage.setItem('barkRaidersMetaV25', JSON.stringify({v25:state.v25, factions:state.v24?.factions}));
+    }catch(e){}
+  };
+  const _v25Load = load;
+  load = function(){
+    _v25Load();
+    try{
+      const meta = JSON.parse(localStorage.getItem('barkRaidersMetaV25') || '{}');
+      if(meta.v25) state.v25 = {...(state.v25||{}), ...meta.v25};
+      if(meta.factions){ if(!state.v24) state.v24={}; state.v24.factions = {...(state.v24.factions||{}), ...meta.factions}; }
+    }catch(e){}
+    v25Meta();
+  };
+
+  v25Meta();
+  log('v0.25 loaded: named traders, faction reputation, boss dialogue, and quick Auto-Raid profiles.');
+  render();
+})();
