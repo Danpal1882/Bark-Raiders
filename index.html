@@ -82,6 +82,15 @@
             <option value="boss">After Boss Objective</option>
           </select>
         </div>
+        <div class="form-row">
+          <label for="contractSelect">Contract</label>
+          <select id="contractSelect"></select>
+        </div>
+        <div class="form-row">
+          <label>Consumables</label>
+          <div id="consumableSetup" class="consumable-setup"></div>
+          <p class="muted tiny">Choose up to 2 consumables to take into the raid.</p>
+        </div>
         <div class="status-box">
           <p><strong>Status:</strong> <span id="statusText">Resting at the kennel.</span></p>
           <p><strong>Weather:</strong> <span id="weatherText">None</span></p>
@@ -130,7 +139,13 @@
       </article>
 
       <div class="side-stack">
-        <article class="panel combat-panel">
+        <article id="choicePanel" class="panel choice-panel hidden">
+        <h2>Raid Prompt</h2>
+        <p id="choiceText" class="muted"></p>
+        <div id="choiceButtons" class="choice-buttons"></div>
+      </article>
+
+      <article class="panel combat-panel">
           <div class="panel-title-row">
             <h2>Combat View</h2>
             <span id="combatState" class="pill muted-pill">Roaming</span>
@@ -177,13 +192,20 @@
       <div id="kennelBase" class="kennel-base"></div>
     </section>
 
-    <section id="choicePanel" class="panel choice-panel hidden">
-      <h2>Map Event Choice</h2>
-      <p id="choiceText" class="muted"></p>
-      <div id="choiceButtons" class="choice-buttons"></div>
+    <section class="panel hub-trader-panel">
+      <div class="panel-title-row">
+        <h2>Hub Trader</h2>
+        <span class="muted small">Always available at the kennel, but never cheap.</span>
+      </div>
+      <div id="hubTraderGrid" class="upgrades"></div>
     </section>
 
     <section class="systems-grid">
+      <article class="panel">
+        <h2>Active Contract</h2>
+        <div id="contractStatus" class="gear-grid"></div>
+      </article>
+
       <article class="panel">
         <h2>Noticeboard Quests</h2>
         <div id="questGrid" class="upgrades"></div>

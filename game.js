@@ -18,17 +18,17 @@ const SPRITES = {
 
 const TILE_ART = {
   base:'assets/tile-base.svg', trader:'assets/tile-trader.svg', city:'assets/biome-city.svg', sewer:'assets/biome-sewer.svg', factory:'assets/biome-factory.svg', farmland:'assets/biome-farmland.svg', crate:'assets/tile-crate.svg', tree:'assets/tile-tree.svg', grove:'assets/tile-grove.svg',
-  food:'assets/tile-food.svg', water:'assets/tile-water.svg', scrap:'assets/tile-scrap.svg', medical:'assets/tile-medical.svg',
+  food:'assets/tile-food.svg', water:'assets/tile-water.svg', scrap:'assets/tile-scrap.svg', medical:'assets/tile-medical.svg', metal:'assets/tile-scrap.svg',
   weapon:'assets/tile-weapon.svg', event:'assets/tile-event.svg', enemy:'assets/tile-enemy.svg', rare:'assets/tile-rare.svg',
   boss:'assets/tile-boss.svg', cleared:'assets/tile-cleared.svg', empty:'assets/tile-empty.svg',
 };
 
 const DOGS = {
-  shiba: { name:'Mochi', breed:'Shiba Inu Raider', sprite:SPRITES.shiba, desc:'Balanced scout. Good crit and reliable combat.', hp:0, attack:1, defence:0, crit:5, speed:0, carry:0, scout:0, rare:0, extract:0 },
-  pom: { name:'Pip', breed:'Pomeranian Chaos Raider', sprite:SPRITES.pom, desc:'Tiny chaos looter. Better rare finds and dodge, but fragile.', hp:-8, attack:0, defence:-1, crit:8, speed:1, carry:-4, scout:0, rare:8, extract:4 },
-  jack: { name:'Rustle', breed:'Jack Russell Scrapper', sprite:SPRITES.jack, desc:'Fast, brave, slightly chaotic. Great at chasing enemies and boss pushes.', hp:4, attack:2, defence:1, crit:5, speed:1, carry:0, scout:0, rare:2, extract:2 },
-  collie: { name:'Scout', breed:'Border Collie Pathfinder', sprite:SPRITES.collie, desc:'Fast route-finder. Better scouting and extraction.', hp:-2, attack:0, defence:0, crit:0, speed:1, carry:0, scout:1, rare:0, extract:8 },
-  dachshund: { name:'Noodle', breed:'Dachshund Sneak', sprite:SPRITES.dachshund, desc:'Sneaky scavenger. Lower threat and better extraction.', hp:-4, attack:-1, defence:0, crit:4, speed:0, carry:2, scout:0, rare:3, extract:12 },
+  shiba: { name:'Mochi', breed:'Shiba Inu Raider', unlock:'Starter', sprite:SPRITES.shiba, desc:'Balanced scout. Good crit and reliable combat.', hp:0, attack:1, defence:0, crit:5, speed:0, carry:0, scout:0, rare:0, extract:0 },
+  pom: { name:'Pip', breed:'Pomeranian Chaos Raider', unlock:'Find/equip any non-starter gear', sprite:SPRITES.pom, desc:'Tiny chaos looter. Better rare finds and dodge, but fragile.', hp:-8, attack:0, defence:-1, crit:8, speed:1, carry:-4, scout:0, rare:8, extract:4 },
+  jack: { name:'Rustle', breed:'Jack Russell Scrapper', unlock:'Beat the first boss / unlock zone 2', sprite:SPRITES.jack, desc:'Fast, brave, slightly chaotic. Great at chasing enemies and boss pushes.', hp:4, attack:2, defence:1, crit:5, speed:1, carry:0, scout:0, rare:2, extract:2 },
+  collie: { name:'Scout', breed:'Border Collie Pathfinder', unlock:'Upgrade Watch Tower to Lv.3', sprite:SPRITES.collie, desc:'Fast route-finder. Better scouting and extraction.', hp:-2, attack:0, defence:0, crit:0, speed:1, carry:0, scout:1, rare:0, extract:8 },
+  dachshund: { name:'Noodle', breed:'Dachshund Sneak', unlock:'Research Dog Whistle', sprite:SPRITES.dachshund, desc:'Sneaky scavenger. Lower threat and better extraction.', hp:-4, attack:-1, defence:0, crit:4, speed:0, carry:2, scout:0, rare:3, extract:12 },
 };
 
 const RAID_PLANS = {
@@ -125,6 +125,35 @@ function currentBiome(){
   const keys = Object.keys(BIOMES);
   return BIOMES[keys[state.zoneId % keys.length]];
 }
+
+
+const CONTRACTS = {
+  none:{name:'No Contract', desc:'Free raid. No extra objective.', reward:{}, check:()=>false, progress:()=>''},
+  wood:{name:'Wood Recovery', desc:'Bring back 30 wood during this raid.', reward:{wood:8, treats:3}, target:30, progress:()=>state.contractProgress.wood||0},
+  pest:{name:'Pest Control', desc:'Defeat 5 enemies during this raid.', reward:{medicine:3, treats:4}, target:5, progress:()=>state.contractProgress.kills||0},
+  trader:{name:'Trader Escort', desc:'Reach/buy from a trader room and survive.', reward:{metal:5, treats:4}, target:1, progress:()=>state.contractProgress.trader||0},
+  boss:{name:'Boss Bounty', desc:'Defeat the dungeon boss.', reward:{gunParts:4, treats:6}, target:1, progress:()=>state.contractProgress.boss||0},
+  medical:{name:'Supply Rescue', desc:'Clear 2 medical rooms.', reward:{medicine:5, water:5, treats:3}, target:2, progress:()=>state.contractProgress.medical||0},
+  silent:{name:'Silent Run', desc:'Clear 8 rooms while defeating no enemies.', reward:{fabric:5, treats:5}, target:8, progress:()=>state.contractProgress.rooms||0, fail:()=>state.contractProgress.kills>0},
+};
+
+const CONSUMABLES = {
+  smoke:{name:'Smoke Biscuit', desc:'Escape the first non-boss fight safely.', icon:'💨'},
+  decoy:{name:'Squeaky Decoy', desc:'Distracts roaming enemies and lowers aggro.', icon:'🧸'},
+  medkit:{name:'Emergency Medkit', desc:'Auto-heals once below 30% HP.', icon:'🩹'},
+  lucky:{name:'Lucky Treat', desc:'Better rare loot and gear drops this raid.', icon:'🍖'},
+  token:{name:'Trader Token', desc:'One trader purchase costs 25% less.', icon:'🪙'},
+  map:{name:'Map Scrap', desc:'Reveal extra nearby rooms at raid start.', icon:'🗺️'},
+};
+
+const HAZARDS = {
+  flooded:{name:'Flooded', icon:'💧', desc:'Slower movement; extra water chance.'},
+  dark:{name:'Dark', icon:'🌑', desc:'Higher ambush chance.'},
+  overgrown:{name:'Overgrown', icon:'🌿', desc:'More wood, hidden enemies.'},
+  collapsing:{name:'Collapsing', icon:'🧱', desc:'Threat rises when entered.'},
+  locked:{name:'Locked', icon:'🔒', desc:'Needs a key or resources to open.'},
+  infested:{name:'Infested', icon:'🐀', desc:'Enemy likely, better reward.'},
+};
 
 const WEATHER = [
   { name:'Clear Skies', icon:'☀️', text:'Balanced scavenging conditions.', loot:1, enemy:1, thirst:0, speed:0, threat:0 },
@@ -227,13 +256,13 @@ const PERKS = {
 };
 
 const QUEST_TEMPLATES = [
-  {id:'wood20', name:'Stockpile Wood', desc:'Bring back 20 wood.', reward:{wood:4, treats:2}, check:()=>state.resources.wood>=20},
-  {id:'metal15', name:'Scrap Collector', desc:'Hold 15 metal.', reward:{metal:3, treats:2}, check:()=>state.resources.metal>=15},
-  {id:'med8', name:'Medic Pup', desc:'Hold 8 medicine.', reward:{medicine:2, treats:2}, check:()=>state.resources.medicine>=8},
-  {id:'gear1', name:'Find Better Gear', desc:'Equip any non-starter item.', reward:{gunParts:2, treats:3}, check:()=>Object.values(state.equipment).some(i=>i.rarity && i.rarity!=='Starter')},
-  {id:'boss1', name:'Boss Proof', desc:'Unlock the second zone.', reward:{food:5, water:5, treats:4}, check:()=>state.unlockedZones>=2},
-  {id:'watch3', name:'Scout Network', desc:'Upgrade Watch Tower to level 3.', reward:{wood:5, treats:3}, check:()=>state.upgrades.watch>=3},
-  {id:'pack3', name:'Bigger Bag Energy', desc:'Upgrade Backpack Rack to level 3.', reward:{fabric:5, treats:3}, check:()=>state.upgrades.pack>=3},
+  {id:'wood20', name:'Fresh Wood Run', desc:'Gain 20 wood after this quest appears.', reward:{wood:4, treats:2}, progress:q=>Math.max(0, state.resources.wood-(q.baseline?.wood||0)), target:20},
+  {id:'metal15', name:'Fresh Scrap Collector', desc:'Gain 15 metal after this quest appears.', reward:{metal:3, treats:2}, progress:q=>Math.max(0, state.resources.metal-(q.baseline?.metal||0)), target:15},
+  {id:'med8', name:'Fresh Medic Pup', desc:'Gain 8 medicine after this quest appears.', reward:{medicine:2, treats:2}, progress:q=>Math.max(0, state.resources.medicine-(q.baseline?.medicine||0)), target:8},
+  {id:'gear1', name:'Find Better Gear', desc:'Equip any non-starter item after this quest appears.', reward:{gunParts:2, treats:3}, progress:q=>Math.max(0, totalGearScore()-((q.baseline?.gearScore)||0)), target:1},
+  {id:'boss1', name:'Boss Proof', desc:'Unlock a new zone after this quest appears.', reward:{food:5, water:5, treats:4}, progress:q=>Math.max(0, state.unlockedZones-(q.baseline?.unlockedZones||1)), target:1},
+  {id:'watch3', name:'Scout Network', desc:'Upgrade Watch Tower by 2 levels after this quest appears.', reward:{wood:5, treats:3}, progress:q=>Math.max(0, state.upgrades.watch-(q.baseline?.watch||1)), target:2},
+  {id:'pack3', name:'Bigger Bag Energy', desc:'Upgrade Backpack Rack by 2 levels after this quest appears.', reward:{fabric:5, treats:3}, progress:q=>Math.max(0, state.upgrades.pack-(q.baseline?.pack||1)), target:2},
 ];
 
 const GEAR_POOLS = {
@@ -261,8 +290,8 @@ const GEAR_POOLS = {
 
 const state = {
   running:false, mode:'idle', seconds:0, ticker:null, autoRaid:false, autoExtract:false, autoExtractRule:'off', offlineReward:null,
-  zoneId:0, unlockedZones:1, planId:'balanced', dogId:'shiba', lootFilter:{}, weather:null, modifier:null, threat:0,
-  map:[], roamEnemies:[], mapSize:12, position:{x:0,y:0}, revealedTiles:0, combat:null, currentBoss:null, pendingChoice:null, activeEventTile:null,
+  zoneId:0, unlockedZones:1, planId:'balanced', dogId:'shiba', contractId:'none', selectedConsumables:[], activeConsumables:[], consumableUsed:{}, contractProgress:{}, contractRewardClaimed:false, lootFilter:{}, weather:null, modifier:null, threat:0,
+  map:[], roamEnemies:[], mapSize:12, position:{x:0,y:0}, revealedTiles:0, combat:null, currentBoss:null, dungeonKeys:0, pendingChoice:null, activeEventTile:null,
   dog:{
     name:'Mochi', breed:'Shiba Inu Raider', sprite:SPRITES.shiba, level:1, xp:0, xpNext:40,
     maxHpBase:38, hp:38, attackBase:8, defenceBase:2, critBase:6, speedBase:1, carryMaxBase:22,
@@ -305,6 +334,55 @@ function currentZone(){ return ZONES[state.zoneId]; }
 function currentPlan(){ return RAID_PLANS[state.planId] || RAID_PLANS.balanced; }
 function currentDogDef(){ return DOGS[state.dogId] || DOGS.shiba; }
 
+function isDogUnlocked(id){
+  if(id === 'shiba') return true;
+  if(id === 'pom') return Object.values(state.equipment || {}).some(item => item.rarity && item.rarity !== 'Starter');
+  if(id === 'jack') return state.unlockedZones >= 2;
+  if(id === 'collie') return (state.upgrades?.watch || 1) >= 3;
+  if(id === 'dachshund') return !!state.research?.dogWhistle;
+  return false;
+}
+
+function ensureSelectedDogUnlocked(){
+  if(!isDogUnlocked(state.dogId)) state.dogId = 'shiba';
+}
+
+
+function currentContract(){ return CONTRACTS[state.contractId] || CONTRACTS.none; }
+function hasConsumable(key){ return state.activeConsumables.includes(key) && !state.consumableUsed[key]; }
+function useConsumable(key){ state.consumableUsed[key] = true; }
+
+function contractProgressText(){
+  const c = currentContract();
+  if(state.contractId === 'none') return 'No contract selected.';
+  const value = c.progress ? c.progress() : 0;
+  const fail = c.fail && c.fail();
+  return `${c.name}: ${Math.min(value, c.target || 1)} / ${c.target || 1}${fail ? ' · Failed' : ''}`;
+}
+
+function isContractComplete(){
+  const c = currentContract();
+  if(state.contractId === 'none') return false;
+  if(c.fail && c.fail()) return false;
+  return (c.progress ? c.progress() : 0) >= (c.target || 1);
+}
+
+function applyContractReward(){
+  if(state.contractRewardClaimed || !isContractComplete()) return;
+  const reward = currentContract().reward || {};
+  Object.entries(reward).forEach(([type, amount]) => {
+    if(type === 'treats') state.treats += amount;
+    else state.resources[type] = (state.resources[type] || 0) + amount;
+  });
+  state.contractRewardClaimed = true;
+  log(`Contract complete: ${currentContract().name}. Reward claimed.`);
+}
+
+function resetContractProgress(){
+  state.contractProgress = {wood:0, kills:0, trader:0, boss:0, medical:0, rooms:0};
+  state.contractRewardClaimed = false;
+}
+
 function ensureLootFilter(){
   RESOURCES.forEach(type => {
     if(type === 'ammo') return;
@@ -337,6 +415,7 @@ function canPay(cost){ return Object.entries(cost).every(([k,v])=>state.resource
 function pay(cost){ Object.entries(cost).forEach(([k,v])=>state.resources[k]-=v); }
 
 function applyUpgrades(){
+  ensureSelectedDogUnlocked();
   const d=state.dog;
   Object.entries(UPGRADE_DEFS).forEach(([key,def])=>def.apply(state.upgrades[key],d));
   const dogDef=currentDogDef();
@@ -349,7 +428,7 @@ function applyUpgrades(){
   d.carryMax=d.carryMaxBase+dogDef.carry+(state.equipment.armour.carry||0);
   d.scoutRange=Math.max(1,d.scoutRange+dogDef.scout);
   d.extractBonus=(d.extractBonus||0)+dogDef.extract+(state.equipment.charm.extract||0)+(state.perks.goodBoy||0)*4;
-  d.rareBonus=dogDef.rare+(state.equipment.charm.rare||0)+(state.perks.nose||0)*3;
+  d.rareBonus=dogDef.rare+(state.equipment.charm.rare||0)+(state.perks.nose||0)*3+(hasConsumable('lucky')?10:0);
   d.ammoMax += (state.equipment.weapon.ammo||0);
   if(state.research.ammoPress) d.ammoMax += 5;
   if(state.research.paddedHarness){ d.carryMax += 10; d.defence += 1; }
@@ -441,68 +520,98 @@ function biomeTileType(biome){
   return weightedPick(entries).type;
 }
 
+function rectsOverlap(a,b,pad=1){
+  return !(a.gridX+a.w+pad <= b.gridX || b.gridX+b.w+pad <= a.gridX || a.gridY+a.h+pad <= b.gridY || b.gridY+b.h+pad <= a.gridY);
+}
+
 function carveDungeonRooms(){
   const biome = currentBiome();
   const plan = currentPlan();
-  const roomCount = 18 + state.zoneId * 3 + (plan.focus === 'boss' ? -2 : 0);
-  const cols = 6;
-  const rows = 5;
-  const cells = [];
-  for(let y=0; y<rows; y++){
-    for(let x=0; x<cols; x++){
-      cells.push({x,y});
+  const cols = 12;
+  const rows = 9;
+  const roomTarget = 12 + state.zoneId * 2 + rand(4);
+  const rooms = [];
+
+  function makeRoom(id, gridX, gridY, w, h){
+    return {
+      id,
+      x:id,
+      y:0,
+      gridX, gridY, w, h,
+      left: 6 + ((gridX + w/2) / cols) * 88,
+      top: 8 + ((gridY + h/2) / rows) * 84,
+      widthPct: Math.max(6, (w / cols) * 82),
+      heightPct: Math.max(7, (h / rows) * 78),
+      type: biomeTileType(biome),
+      roomName: pick(biome.rooms),
+      biomeKey: Object.keys(BIOMES).find(k=>BIOMES[k]===biome),
+      seen:false,
+      cleared:false,
+      links:[],
+      locked:false,
+      keyRoom:false,
+      hazard:null,
+    };
+  }
+
+  let attempts = 0;
+  while(rooms.length < roomTarget && attempts < 220){
+    attempts++;
+    const w = 1 + rand(3);
+    const h = 1 + rand(2);
+    const gridX = rand(cols - w);
+    const gridY = rand(rows - h);
+    const candidate = makeRoom(rooms.length, gridX, gridY, w, h);
+    if(rooms.every(r=>!rectsOverlap(candidate,r,0))) rooms.push(candidate);
+  }
+
+  // Fallback if random placement is too sparse.
+  if(rooms.length < 8){
+    rooms.length = 0;
+    const coords = [[0,4],[2,2],[2,6],[4,4],[6,2],[6,6],[8,4],[10,4]];
+    coords.forEach((c,i)=>rooms.push(makeRoom(i,c[0],c[1],1+rand(2),1)));
+  }
+
+  // Re-id after generation.
+  rooms.forEach((r,i)=>{r.id=i; r.x=i;});
+
+  // Connect each room to nearest previous room for guaranteed connected graph.
+  const byLeft = rooms.slice().sort((a,b)=>a.left-b.left);
+  for(let i=1;i<byLeft.length;i++){
+    const room = byLeft[i];
+    const previous = byLeft.slice(0,i).sort((a,b)=>nodeDistance(room,a)-nodeDistance(room,b))[0];
+    connectNodes(room, previous);
+  }
+
+  // Add extra corridors for loops.
+  rooms.forEach(room=>{
+    const near = rooms.filter(r=>r.id!==room.id).sort((a,b)=>nodeDistance(room,a)-nodeDistance(room,b)).slice(0,3);
+    near.forEach(other=>{ if(Math.random()<.32) connectNodes(room, other); });
+  });
+
+  // Assign hazards and locks.
+  rooms.forEach(room=>{
+    if(Math.random()<.32){
+      const weighted = biome.name === 'Sewer' ? ['flooded','dark','infested','locked'] :
+        biome.name === 'Factory' ? ['collapsing','locked','dark','infested'] :
+        biome.name === 'Farmland' ? ['overgrown','locked','infested','flooded'] :
+        ['dark','collapsing','locked','infested'];
+      room.hazard = pick(weighted);
+      if(room.hazard === 'locked') room.locked = true;
     }
+  });
+
+  // Ensure at least one key room if locked rooms exist.
+  const lockedRooms = rooms.filter(r=>r.locked);
+  if(lockedRooms.length){
+    const keyCandidates = rooms.filter(r=>!r.locked);
+    const keyRoom = keyCandidates.length ? pick(keyCandidates) : rooms[0];
+    keyRoom.keyRoom = true;
+    keyRoom.roomName = 'Key Cache';
+    keyRoom.type = keyRoom.type === 'base' ? 'crate' : keyRoom.type;
   }
 
-  const chosen = [];
-  let cursor = {x:0, y:Math.floor(rows/2)};
-  chosen.push(cursor);
-
-  // Main route snakes from left to right so boss access is always possible.
-  while(cursor.x < cols-1){
-    const options = [
-      {x:cursor.x+1, y:cursor.y},
-      {x:cursor.x, y:clamp(cursor.y-1,0,rows-1)},
-      {x:cursor.x, y:clamp(cursor.y+1,0,rows-1)}
-    ].filter(c => c.x >= 0 && c.x < cols && c.y >= 0 && c.y < rows);
-    cursor = Math.random() < .72 ? options.find(c=>c.x===cursor.x+1) || pick(options) : pick(options);
-    if(!chosen.some(c=>c.x===cursor.x && c.y===cursor.y)) chosen.push({...cursor});
-  }
-  cursor = {x:cols-1, y:Math.floor(rows/2)};
-  if(!chosen.some(c=>c.x===cursor.x && c.y===cursor.y)) chosen.push(cursor);
-
-  // Add branches and side rooms.
-  while(chosen.length < roomCount){
-    const anchor = pick(chosen);
-    const options = [
-      {x:anchor.x+1,y:anchor.y}, {x:anchor.x-1,y:anchor.y},
-      {x:anchor.x,y:anchor.y+1}, {x:anchor.x,y:anchor.y-1},
-    ].filter(c=>c.x>=0 && c.x<cols && c.y>=0 && c.y<rows && !chosen.some(r=>r.x===c.x && r.y===c.y));
-    if(options.length) chosen.push(pick(options));
-    else {
-      const open = cells.filter(c=>!chosen.some(r=>r.x===c.x && r.y===c.y));
-      if(!open.length) break;
-      chosen.push(pick(open));
-    }
-  }
-
-  chosen.sort((a,b)=>a.x-b.x || a.y-b.y);
-
-  return chosen.map((cell, i) => ({
-    id:i,
-    x:i,
-    y:0,
-    gridX:cell.x,
-    gridY:cell.y,
-    left: 8 + cell.x * (84/(cols-1)) + (Math.random()*5-2.5),
-    top: 12 + cell.y * (76/(rows-1)) + (Math.random()*5-2.5),
-    type: biomeTileType(biome),
-    roomName: pick(biome.rooms),
-    biomeKey: Object.keys(BIOMES).find(k=>BIOMES[k]===biome),
-    seen:false,
-    cleared:false,
-    links:[],
-  }));
+  return rooms;
 }
 
 function generateMap(){
@@ -521,10 +630,14 @@ function generateMap(){
   entrance.roomName = 'Kennel Entrance';
   entrance.seen = true;
   entrance.cleared = true;
+  entrance.locked = false;
+  entrance.hazard = null;
   boss.type = 'boss';
   boss.roomName = `${state.currentBoss.name}'s Den`;
   boss.seen = !!state.research.bossMap;
   boss.cleared = false;
+  boss.locked = false;
+  boss.hazard = boss.hazard === 'locked' ? null : boss.hazard;
 
   // Connect adjacent grid rooms as corridors.
   state.map.forEach(room => {
@@ -585,7 +698,7 @@ function generateRoamingEnemies(){
     const template=pick(currentZone().enemies);
     const pos=randomMapPosition();
     const hp=Math.round(template.hp*(state.weather?.enemy||1)*plan.enemy);
-    state.roamEnemies.push({id:`roamer-${Date.now()}-${i}`,template,sprite:template.sprite,name:template.name,hp,maxHp:hp,left:pos.left,top:pos.top,targetLeft:pos.left,targetTop:pos.top,active:true,aggro:8+state.zoneId*1.5+(template.behavior==='chaser'?4:0)});
+    state.roamEnemies.push({id:`roamer-${Date.now()}-${i}`,template,sprite:template.sprite,name:template.name,hp,maxHp:hp,left:pos.left,top:pos.top,targetLeft:pos.left,targetTop:pos.top,active:true,aggro:(8+state.zoneId*1.5+(template.behavior==='chaser'?4:0))*(hasConsumable('decoy')?.72:1)});
   }
 }
 
@@ -711,7 +824,7 @@ function addRaidLoot(type,amount){
     }
   }
   const gain=clamp(amount,0,state.dog.carryMax-state.dog.carry);
-  state.raidLoot[type]+=gain; state.dog.carry+=gain; return gain;
+  state.raidLoot[type]+=gain; state.dog.carry+=gain; if(type==='wood') state.contractProgress.wood=(state.contractProgress.wood||0)+gain; return gain;
 }
 
 function bundleFor(type){
@@ -759,6 +872,8 @@ function lootTile(tile){
   }
   maybeDropGear(tile.type);
   tile.cleared=true;
+  if(tile.type==='medical') state.contractProgress.medical++;
+  state.contractProgress.rooms++;
   state.threat+=tile.type==='rare'?7:3;
   state.encounterText=`Looted ${tile.type}: ${found.join(' ')||'pack full'}.`;
   log(`${state.dog.name} looted ${tile.type}: ${found.join(' ')||'pack full'}.`);
@@ -784,6 +899,32 @@ function traderOffers(){
   if(biome.name === 'Farmland') offers.push({label:'Buy Farm Supplies', desc:'Food and wood at a markup.', cost:{metal:expensivePrice(7), fabric:expensivePrice(4)}, effect:()=>{state.resources.food += 8; state.resources.wood += 8; log('Bought farm supplies.');}});
 
   return offers;
+}
+
+
+function hubTraderOffers(){
+  return [
+    {label:'Kennel Med Crate', desc:'Adds 6 medicine. Expensive but reliable.', cost:{food:10, water:10, metal:8}, effect:()=>{state.resources.medicine += 6;}},
+    {label:'Bulk Wood Delivery', desc:'Adds 18 wood for base upgrades.', cost:{food:12, water:8, metal:10}, effect:()=>{state.resources.wood += 18;}},
+    {label:'Gun Parts Cache', desc:'Adds 6 gun parts.', cost:{metal:18, wood:14, medicine:4}, effect:()=>{state.resources.gunParts += 6;}},
+    {label:'Ammo Resupply', desc:'Adds 18 ammo. Very poor value, but handy.', cost:{metal:12, food:8, gunParts:3}, effect:()=>{state.resources.ammo += 18;}},
+    {label:'Mystery Gear Deal', desc:'Rolls a rare gear drop.', cost:{metal:24, gunParts:10, medicine:5}, effect:()=>{maybeDropGear('rare');}},
+  ];
+}
+
+function buyHubOffer(index){
+  if(state.running){ log('Hub trader is only available between raids.'); return; }
+  const offer = hubTraderOffers()[index];
+  if(!offer) return;
+  if(!canAffordFromResources(offer.cost)){
+    log(`Cannot afford ${offer.label}.`);
+    return;
+  }
+  payFromResources(offer.cost);
+  offer.effect();
+  log(`Hub trader purchase: ${offer.label}.`);
+  save();
+  render();
 }
 
 function canAffordFromResources(cost){
@@ -815,7 +956,8 @@ function beginTraderChoice(tile){
       {label:'Walk away', effect:()=>{state.threat=Math.max(0,state.threat-3); log('Ignored the trader and kept moving.');}},
     ],
   };
-  state.encounterText='Trader found. Choose whether to buy.';
+  state.contractProgress.trader = 1;
+  state.encounterText='Raid trader found. Choose whether to buy, or walk away.';
   render();
 }
 
@@ -864,6 +1006,13 @@ function resolveChoice(index){
 
 function startCombat(enemy,bossFight=false,sourceId=null){
   if(state.mode==='combat') return;
+  if(!bossFight && hasConsumable('smoke')){
+    useConsumable('smoke');
+    state.encounterText = 'Smoke Biscuit used! Fight avoided safely.';
+    log(state.encounterText);
+    if(sourceId){ const roamer=state.roamEnemies.find(enemy=>enemy.id===sourceId); if(roamer) roamer.active=false; }
+    return;
+  }
   state.mode='combat';
   const hp=Math.round(enemy.hp*(state.weather?.enemy||1)*currentPlan().enemy);
   state.combat={enemy:{...enemy,hp,maxHp:hp,atk:Math.round(enemy.atk*(state.weather?.enemy||1)*currentPlan().enemy),bossFight,sourceId,round:0}};
@@ -931,6 +1080,13 @@ function fightRound(){
     enemyBehaviourHit(e,notes);
   }
 
+  if(state.dog.hp>0 && state.dog.hp <= Math.ceil(state.dog.maxHp*.3) && hasConsumable('medkit')){
+    useConsumable('medkit');
+    const heal = Math.ceil(state.dog.maxHp*.45);
+    state.dog.hp = Math.min(state.dog.maxHp, state.dog.hp + heal);
+    notes.push(`Emergency Medkit triggers for ${heal} HP.`);
+  }
+
   if(state.dog.hp<=0){ state.dog.hp=0; log(notes.join(' ')); state.encounterText=`${state.dog.name} was beaten by ${e.name} and retreated to the kennel.`; endRaid(false); return; }
 
   if(state.dog.hp<=Math.ceil(state.dog.maxHp*.35) && state.raidLoot.medicine>0){
@@ -945,6 +1101,8 @@ function fightRound(){
 function winCombat(e){
   Object.entries(e.reward).forEach(([k,v])=>addRaidLoot(k,v));
   addXp(e.xp||5);
+  state.contractProgress.kills=(state.contractProgress.kills||0)+1;
+  if(e.bossFight) state.contractProgress.boss=1;
   state.dog.hp=Math.min(state.dog.maxHp,state.dog.hp+state.dog.healBetween);
   if(e.sourceId){ const roamer=state.roamEnemies.find(enemy=>enemy.id===e.sourceId); if(roamer) roamer.active=false; }
   const tile=getTile(state.position.x,state.position.y);
@@ -969,27 +1127,103 @@ function weatherDrain(){
   if(drain>0 && Math.random()<.35){ state.dog.hp=Math.max(1,state.dog.hp-drain); log(`${state.weather.name} wears ${state.dog.name} down for ${drain} HP.`); }
 }
 
+
+function roomHazardTag(tile){
+  if(tile.keyRoom) return '🗝️';
+  if(tile.locked) return '🔒';
+  if(tile.hazard && HAZARDS[tile.hazard]) return HAZARDS[tile.hazard].icon;
+  return '';
+}
+
+function tryUnlockRoom(tile){
+  if(!tile.locked) return true;
+  if(state.dungeonKeys > 0){
+    state.dungeonKeys--;
+    tile.locked = false;
+    tile.hazard = null;
+    log(`${state.dog.name} used a dungeon key to unlock ${tile.roomName}.`);
+    return true;
+  }
+  const forceCost = currentBiome().name === 'Factory' ? {gunParts:1, metal:2} : {wood:2, metal:1};
+  if(Object.entries(forceCost).every(([k,v]) => state.raidLoot[k] >= v)){
+    Object.entries(forceCost).forEach(([k,v]) => { state.raidLoot[k]-=v; state.dog.carry=Math.max(0,state.dog.carry-v); });
+    tile.locked = false;
+    tile.hazard = null;
+    state.threat += 6;
+    log(`${state.dog.name} forced open ${tile.roomName} using raid loot. Threat rises.`);
+    return true;
+  }
+  state.encounterText = `${tile.roomName} is locked. Find a key or carry wood/metal/gun parts to force it.`;
+  log(state.encounterText);
+  tile.cleared = true;
+  return false;
+}
+
+function applyRoomHazard(tile){
+  if(!tile.hazard || tile.locked || tile.cleared) return;
+  const hazard = tile.hazard;
+  if(hazard === 'flooded'){
+    addRaidLoot('water', 1+rand(2));
+    state.threat += 1;
+    log('Flooded room: movement is slow, but water is found.');
+  }
+  if(hazard === 'dark' && Math.random()<.45){
+    log('Dark room ambush!');
+    startCombat(pick(currentZone().enemies), false);
+  }
+  if(hazard === 'overgrown'){
+    addRaidLoot('wood', 2+rand(3));
+    if(Math.random()<.25) startCombat(pick(currentZone().enemies), false);
+  }
+  if(hazard === 'collapsing'){
+    state.threat += 9;
+    state.dog.hp = Math.max(1, state.dog.hp - 2);
+    log('Collapsing room: threat rises and debris clips the dog.');
+  }
+  if(hazard === 'infested'){
+    state.threat += 4;
+    if(Math.random()<.7) startCombat(pick(currentZone().enemies), false);
+    else addRaidLoot('food', 1+rand(2));
+  }
+}
+
 function resolveTile(tile){
   if(!tile || tile.cleared || tile.type==='base') return;
+  if(!tryUnlockRoom(tile)) return;
+  if(tile.keyRoom){
+    state.dungeonKeys++;
+    tile.keyRoom = false;
+    log(`${state.dog.name} found a dungeon key.`);
+  }
+  applyRoomHazard(tile);
+  if(state.mode === 'combat') return;
   if(['crate','tree','grove','food','water','scrap','medical','weapon','rare'].includes(tile.type)) lootTile(tile);
   else if(tile.type==='event') beginEventChoice(tile);
   else if(tile.type==='trader') beginTraderChoice(tile);
-  else if(tile.type==='enemy') startCombat(pick(currentZone().enemies),false);
+  else if(tile.type==='enemy'){ startCombat(pick(currentZone().enemies),false); if(state.mode !== 'combat'){ tile.cleared=true; tile.type='empty'; state.contractProgress.rooms++; } }
   else if(tile.type==='boss') startCombat(state.currentBoss || currentZone().boss,true);
   else { tile.cleared=true; state.encounterText='Quiet block. Nothing useful here.'; }
 
   weatherDrain();
 
-  if(state.threat>=100 && state.mode!=='combat' && state.mode!=='choice'){ log('Threat hit 100%. Forced extraction!'); endRaid(Math.random()*100<extractChance()); return; }
-  if(state.dog.carry>=state.dog.carryMax && state.mode!=='combat' && state.mode!=='choice'){
-    const plan = currentPlan();
-    if(plan.focus === 'boss' || plan.boss){
-      state.encounterText = `${state.dog.name}'s pack is full, but Boss Hunt continues. New loot will be ignored or swapped.`;
-      log(`${state.dog.name}'s pack is full, but keeps pushing for the boss.`);
-    } else {
-      log(`${state.dog.name}'s pack is full. Extracting.`);
-      endRaid(true);
+  if(state.threat>=100 && state.mode!=='combat' && state.mode!=='choice'){
+    if(state.autoExtract && state.autoExtractRule !== 'off'){
+      log('Threat hit 100%. Auto-Extract attempts an emergency retreat.');
+      endRaid(Math.random()*100<extractChance());
+      return;
     }
+    state.encounterText = `Threat is maxed. ${state.dog.name} keeps going because Auto-Extract is off.`;
+    log(`Threat is maxed, but Auto-Extract is off. ${state.dog.name} keeps going.`);
+  }
+
+  if(state.dog.carry>=state.dog.carryMax && state.mode!=='combat' && state.mode!=='choice'){
+    if(state.autoExtract && state.autoExtractRule === 'pack'){
+      log(`${state.dog.name}'s pack is full. Auto-Extract: Pack Full triggered.`);
+      endRaid(true);
+      return;
+    }
+    state.encounterText = `${state.dog.name}'s pack is full. New loot will be ignored or swapped; raid continues.`;
+    log(`${state.dog.name}'s pack is full, but Auto-Extract is off/not Pack Full, so the raid continues.`);
   }
 }
 
@@ -1014,7 +1248,7 @@ function shouldAutoExtract(){
   if(state.autoExtractRule === 'balanced') return hpPct <= 35 || state.threat >= 85;
   if(state.autoExtractRule === 'greedy') return hpPct <= 25 || state.threat >= 95;
   if(state.autoExtractRule === 'pack') return state.dog.carry >= state.dog.carryMax;
-  if(state.autoExtractRule === 'boss') return false;
+  if(state.autoExtractRule === 'boss') return false; // boss victory already extracts through bossClear
   return false;
 }
 
@@ -1040,6 +1274,12 @@ function startRaid(){
   state.zoneId=Number($('zoneSelect').value);
   state.planId=$('planSelect').value;
   state.dogId=$('dogSelect').value;
+  state.contractId=$('contractSelect').value;
+  state.activeConsumables=[...state.selectedConsumables];
+  state.consumableUsed={};
+  resetContractProgress();
+  state.dungeonKeys=0;
+  if(state.autoExtractRule === 'off') state.autoExtract = false;
   state.weather=pick(WEATHER); state.modifier=pick(MODIFIERS);
   state.running=true; state.mode='roaming'; state.seconds=0;
   state.threat=clamp(8+(state.weather.threat||0)+(state.modifier.threat||0)+(currentPlan().threat||0),0,70);
@@ -1047,7 +1287,7 @@ function startRaid(){
   state.encounterText='Raid started.';
   computeRaidStats();
   state.dog.hp=state.dog.maxHp; state.dog.carry=0; state.dog.ammo=Math.min(state.dog.ammoMax,state.resources.ammo+Math.min(2,state.modifier?.ammoBonus||0));
-  generateMap(); generateRoamingEnemies();
+  generateMap(); if(hasConsumable('map')){ revealAround(state.position.x,state.position.y,state.dog.scoutRange+2); useConsumable('map'); log('Map Scrap reveals extra nearby rooms.'); } generateRoamingEnemies();
   log(`Raid started: ${currentPlan().name} in ${currentZone().name} with ${state.dog.name}.`);
   log(`Weather: ${state.weather.icon} ${state.weather.name}. Modifier: ${state.modifier.name}. Extraction chance ${extractChance()}%.`);
   $('startBtn').disabled=true; $('returnBtn').disabled=false; $('zoneSelect').disabled=true; $('planSelect').disabled=true; $('dogSelect').disabled=true;
@@ -1066,6 +1306,7 @@ function endRaid(success,bossClear=false){
   clearInterval(state.ticker); state.running=false; state.mode='idle';
   if(!success){ loseSomeLoot(); log('Bad extraction: some loot was dropped on the way home.'); }
   bankRaidLoot();
+  applyContractReward();
   if(bossClear) log(`${state.dog.name} returned victorious after defeating ${(state.currentBoss || currentZone().boss).name}.`);
   else if(success) log(`${state.dog.name} extracted to the kennel with supplies.`);
   else log(`${state.dog.name} limped home after a rough raid.`);
@@ -1109,19 +1350,49 @@ function updateGear(){
   state.gear[4].detail=`${state.equipment.charm.rarity}; +${state.equipment.charm.crit||0}% crit, +${state.equipment.charm.extract||0} extract.`;
 }
 
+function totalGearScore(){
+  return Object.values(state.equipment || {}).reduce((sum, item) => sum + (item.score || 0), 0);
+}
+
+function questBaseline(){
+  return {
+    food: state.resources.food || 0,
+    water: state.resources.water || 0,
+    wood: state.resources.wood || 0,
+    metal: state.resources.metal || 0,
+    fabric: state.resources.fabric || 0,
+    medicine: state.resources.medicine || 0,
+    gunParts: state.resources.gunParts || 0,
+    unlockedZones: state.unlockedZones || 1,
+    watch: state.upgrades.watch || 1,
+    pack: state.upgrades.pack || 1,
+    gearScore: totalGearScore(),
+  };
+}
+
 function ensureQuests(){
   if(!state.quests || !state.quests.length){
-    state.quests = QUEST_TEMPLATES.slice(0,4).map(q=>({id:q.id, claimed:false}));
+    state.quests = QUEST_TEMPLATES.slice(0,4).map(q=>({id:q.id, claimed:false, baseline:questBaseline()}));
   }
+  state.quests.forEach(q => {
+    if(!q.baseline) q.baseline = questBaseline();
+  });
 }
 
 function questTemplate(id){ return QUEST_TEMPLATES.find(q=>q.id===id); }
+function questProgress(qState){
+  const q = questTemplate(qState.id);
+  if(!q) return {value:0, target:1, done:false};
+  const value = q.progress ? q.progress(qState) : 0;
+  const target = q.target || 1;
+  return {value, target, done:value >= target};
+}
 
 function claimQuest(id){
   ensureQuests();
   const qState = state.quests.find(q=>q.id===id);
   const q = questTemplate(id);
-  if(!qState || !q || qState.claimed || !q.check()) return;
+  if(!qState || !q || qState.claimed || !questProgress(qState).done) return;
   Object.entries(q.reward).forEach(([type, amount]) => {
     if(type === 'treats') state.treats += amount;
     else state.resources[type] = (state.resources[type] || 0) + amount;
@@ -1165,9 +1436,10 @@ function renderPlanOptions(){
 }
 
 function renderDogOptions(){
+  ensureSelectedDogUnlocked();
   $('dogSelect').innerHTML=Object.entries(DOGS).map(([id,dog])=>{
-    const locked=false;
-    return `<option value="${id}" ${id===state.dogId?'selected':''} ${locked?'disabled':''}>${dog.name} — ${dog.breed}</option>`;
+    const locked=!isDogUnlocked(id);
+    return `<option value="${id}" ${id===state.dogId?'selected':''} ${locked?'disabled':''}>${dog.name} — ${dog.breed}${locked?` (Locked: ${dog.unlock})`:''}</option>`;
   }).join('');
 }
 
@@ -1261,13 +1533,20 @@ function renderMap(){
       const dx = b.left-a.left, dy = b.top-a.top;
       const len = Math.sqrt(dx*dx+dy*dy);
       const angle = Math.atan2(dy,dx) * 180 / Math.PI;
-      seenLinks.push(`<div class="path-line" style="left:${a.left}%;top:${a.top}%;width:${len}%;transform:rotate(${angle}deg)"></div>`);
+      seenLinks.push(`<div class="path-line ${tile.locked || other.locked ? 'locked-path' : ''}" style="left:${a.left}%;top:${a.top}%;width:${len}%;transform:rotate(${angle}deg)"></div>`);
     });
   });
   const paths = seenLinks.join('');
 
   const biomeKey = Object.keys(BIOMES).find(k=>BIOMES[k]===biome);
   const biomeBadge = `<div class="biome-badge"><img src="${TILE_ART[biomeKey]}" alt="${biome.name}"><span>${biome.icon} ${biome.name}</span></div>`;
+
+  const outlines = state.map.filter(tile=>tile.seen).map(tile => {
+    const p = mapPoint(tile);
+    const w = tile.widthPct || 7;
+    const h = tile.heightPct || 7;
+    return `<div class="dungeon-room-outline" style="left:${p.left}%;top:${p.top}%;width:${w}%;height:${h}%"></div>`;
+  }).join('');
 
   const pois=state.map.map(tile=>{
     const point=mapPoint(tile); const current=tile.x===state.position.x && tile.y===state.position.y && state.running;
@@ -1278,7 +1557,9 @@ function renderMap(){
     const health=(!tile.cleared && tile.seen && ['enemy','boss'].includes(tile.type))?`<div class="map-hp"><span style="width:${hpWidth}%"></span></div>`:'';
     const img=enemySprite && tile.seen && !tile.cleared?`<img class="map-enemy-sprite" src="${enemySprite}" alt="${tile.type}">`:`<img class="tile-img" src="${tileImg(tile)}" alt="${tile.type}">`;
     const label = tile.seen ? `<span class="room-label">${tile.roomName || tile.type}</span>` : '';
-    return `<div class="${classes}" title="${tile.roomName || tile.type}" style="left:${point.left}%;top:${point.top}%">${tile.seen?img:''}${health}${label}</div>`;
+    const tag = tile.seen && roomHazardTag(tile) ? `<span class="room-tag">${roomHazardTag(tile)}</span>` : '';
+    const extraClass = `${tile.locked ? ' locked' : ''}${tile.hazard ? ' hazard-room' : ''}${tile.keyRoom ? ' key-room' : ''}`;
+    return `<div class="${classes}${extraClass}" title="${tile.roomName || tile.type}" style="left:${point.left}%;top:${point.top}%">${tile.seen?img:''}${health}${tag}${label}</div>`;
   }).join('');
 
   const roamers=state.running?state.roamEnemies.filter(e=>e.active).map(e=>{
@@ -1290,7 +1571,7 @@ function renderMap(){
 
   const dogPoint=dogMapPosition();
   const dog=state.running?`<img class="map-dog" src="${state.dog.sprite}" alt="dog" style="left:${dogPoint.left}%;top:${dogPoint.top}%">`:'';
-  $('map').innerHTML=biomeBadge+paths+pois+roamers+dog;
+  $('map').innerHTML=biomeBadge+outlines+paths+pois+roamers+dog;
 }
 
 function renderLootFilter(){
@@ -1315,16 +1596,64 @@ function renderPackManager(){
   }).join('') : '<p class="muted tiny">No raid loot yet.</p>';
 }
 
+function renderContractOptions(){
+  $('contractSelect').innerHTML = Object.entries(CONTRACTS).map(([id,c]) =>
+    `<option value="${id}" ${id===state.contractId?'selected':''}>${c.name} — ${c.desc}</option>`
+  ).join('');
+}
+
+function renderConsumableSetup(){
+  $('consumableSetup').innerHTML = Object.entries(CONSUMABLES).map(([id,c]) => {
+    const checked = state.selectedConsumables.includes(id);
+    const disabled = !checked && state.selectedConsumables.length >= 2;
+    return `<label class="consumable-chip">
+      <input type="checkbox" ${checked?'checked':''} ${disabled?'disabled':''} onchange="toggleConsumable('${id}')">
+      <span>${c.icon} ${c.name}</span>
+    </label>`;
+  }).join('');
+}
+
+function renderContractStatus(){
+  const c = currentContract();
+  const rewards = Object.entries(c.reward || {}).map(([k,v]) => k==='treats' ? `🦴 ${v}` : `${ICONS[k]} ${v}`).join(' ');
+  $('contractStatus').innerHTML = `<div class="gear">
+    <strong>${c.name}</strong>
+    <span>${c.desc}</span>
+    <span>${contractProgressText()}</span>
+    <span>Reward: ${rewards || 'None'}</span>
+  </div>
+  <div class="gear">
+    <strong>Raid Consumables</strong>
+    <span>${state.activeConsumables.length ? state.activeConsumables.map(k=>`${CONSUMABLES[k].icon} ${CONSUMABLES[k].name}${state.consumableUsed[k]?' ✅':''}`).join('<br>') : 'None active'}</span>
+    <span>Dungeon keys: ${state.dungeonKeys}</span>
+  </div>`;
+}
+
+function renderHubTrader(){
+  $('hubTraderGrid').innerHTML = hubTraderOffers().map((offer, index) => `
+    <div class="upgrade">
+      <div>
+        <h3>${offer.label}</h3>
+        <p>${offer.desc}</p>
+        <p>Price: ${costText(offer.cost)}</p>
+      </div>
+      <button ${!state.running && canAffordFromResources(offer.cost) ? '' : 'disabled'} onclick="buyHubOffer(${index})">Buy</button>
+    </div>
+  `).join('');
+}
+
 function renderQuests(){
   ensureQuests();
   $('questGrid').innerHTML = state.quests.map(qState => {
     const q = questTemplate(qState.id);
     if(!q) return '';
-    const done = q.check();
+    const progress = questProgress(qState);
+    const done = progress.done;
     return `<div class="upgrade ${done ? 'quest-complete' : ''}">
       <div>
         <h3>${qState.claimed ? '✅ ' : ''}${q.name}</h3>
         <p>${q.desc}</p>
+        <p>Progress: ${Math.min(progress.value, progress.target)} / ${progress.target}</p>
         <p>Reward: ${Object.entries(q.reward).map(([k,v]) => k === 'treats' ? `🦴 ${v} treats` : `${ICONS[k]} ${v}`).join(' ')}</p>
       </div>
       <button ${done && !qState.claimed ? '' : 'disabled'} onclick="claimQuest('${q.id}')">${qState.claimed ? 'Claimed' : 'Claim'}</button>
@@ -1362,11 +1691,18 @@ function renderEquipmentInventory(){
 }
 
 function render(){
-  renderZoneOptions(); renderPlanOptions(); renderDogOptions(); renderLootFilter(); renderStats(); renderGear(); renderEquipment(); renderResources(); renderPackManager(); renderUpgrades(); renderResearch(); renderKennel(); renderChoice(); renderQuests(); renderPerks(); renderEquipmentInventory(); renderCombat(); renderMap();
+  renderZoneOptions(); renderPlanOptions(); renderDogOptions(); renderContractOptions(); renderConsumableSetup(); renderLootFilter(); renderStats(); renderGear(); renderEquipment(); renderResources(); renderPackManager(); renderUpgrades(); renderResearch(); renderKennel(); renderChoice(); renderContractStatus(); renderHubTrader(); renderQuests(); renderPerks(); renderEquipmentInventory(); renderCombat(); renderMap();
   $('autoBtn').textContent=`Auto-Raid: ${state.autoRaid?'On':'Off'}`;
   $('autoBtn').disabled=!state.research.dogWhistle;
   $('autoExtractBtn').textContent=`Auto-Extract: ${state.autoExtract?'On':'Off'}`;
   $('extractSelect').value = state.autoExtractRule || 'off';
+}
+
+function toggleConsumable(id){
+  if(state.running) return;
+  if(state.selectedConsumables.includes(id)) state.selectedConsumables = state.selectedConsumables.filter(x=>x!==id);
+  else if(state.selectedConsumables.length < 2) state.selectedConsumables.push(id);
+  save(); render();
 }
 
 function toggleLootFilter(type){
@@ -1418,7 +1754,7 @@ function claimOffline(){
 
 function save(){
   localStorage.setItem('barkRaidersSaveV9', JSON.stringify({
-    resources:state.resources, upgrades:state.upgrades, unlockedZones:state.unlockedZones, zoneId:state.zoneId, planId:state.planId, dogId:state.dogId, lootFilter:state.lootFilter, autoExtract:state.autoExtract, autoExtractRule:state.autoExtractRule, treats:state.treats, perks:state.perks, quests:state.quests, equipmentInventory:state.equipmentInventory,
+    resources:state.resources, upgrades:state.upgrades, unlockedZones:state.unlockedZones, zoneId:state.zoneId, planId:state.planId, dogId:state.dogId, contractId:state.contractId, selectedConsumables:state.selectedConsumables, lootFilter:state.lootFilter, autoExtract:state.autoExtract, autoExtractRule:state.autoExtractRule, treats:state.treats, perks:state.perks, quests:state.quests, equipmentInventory:state.equipmentInventory,
     research:state.research, dog:{level:state.dog.level,xp:state.dog.xp,xpNext:state.dog.xpNext}, autoRaid:state.autoRaid, equipment:state.equipment, lastSeen:Date.now()
   }));
   localStorage.setItem('barkRaidersLastSeenV9', String(Date.now()));
@@ -1433,13 +1769,13 @@ function load(){
     state.research={...state.research,...(data.research||{})};
     state.unlockedZones=clamp(data.unlockedZones||1,1,ZONES.length);
     state.zoneId=clamp(data.zoneId||0,0,state.unlockedZones-1);
-    state.planId=data.planId||'balanced'; state.dogId=data.dogId==='bulldog'?'jack':(data.dogId||'shiba'); if(!DOGS[state.dogId]) state.dogId='shiba'; state.lootFilter={...state.lootFilter, ...(data.lootFilter||{})}; state.autoRaid=!!data.autoRaid; state.autoExtract=!!data.autoExtract; state.autoExtractRule=data.autoExtractRule||'off'; state.treats=data.treats||0; state.perks={...state.perks, ...(data.perks||{})}; state.quests=data.quests||state.quests; state.equipmentInventory={...state.equipmentInventory, ...(data.equipmentInventory||{})};
+    state.planId=data.planId||'balanced'; state.dogId=data.dogId==='bulldog'?'jack':(data.dogId||'shiba'); if(!DOGS[state.dogId]) state.dogId='shiba'; state.lootFilter={...state.lootFilter, ...(data.lootFilter||{})}; state.autoRaid=!!data.autoRaid; state.autoExtract=!!data.autoExtract; state.autoExtractRule=data.autoExtractRule||'off'; state.contractId=data.contractId||'none'; state.selectedConsumables=data.selectedConsumables||[]; state.treats=data.treats||0; state.perks={...state.perks, ...(data.perks||{})}; state.quests=data.quests||state.quests; state.equipmentInventory={...state.equipmentInventory, ...(data.equipmentInventory||{})};
     if(data.dog){ state.dog.level=data.dog.level||1; state.dog.xp=data.dog.xp||0; state.dog.xpNext=data.dog.xpNext||40; }
     if(data.equipment) state.equipment={...state.equipment,...data.equipment};
   } catch(e){ console.warn('Could not load save', e); }
 }
 
-function resetSave(){ if(confirm('Reset Bark Raiders v0.9 save data?')){ localStorage.removeItem('barkRaidersSaveV9'); localStorage.removeItem('barkRaidersSaveV8'); localStorage.removeItem('barkRaidersSaveV7'); localStorage.removeItem('barkRaidersLastSeenV9'); location.reload(); } }
+function resetSave(){ if(confirm('Reset Bark Raiders save data?')){ localStorage.removeItem('barkRaidersSaveV9'); localStorage.removeItem('barkRaidersSaveV8'); localStorage.removeItem('barkRaidersSaveV7'); localStorage.removeItem('barkRaidersLastSeenV9'); location.reload(); } }
 function toggleAuto(){ if(!state.research.dogWhistle){ log('Research Dog Whistle first to unlock Auto-Raid.'); return; } state.autoRaid=!state.autoRaid; save(); render(); }
 function toggleAutoExtract(){ state.autoExtract=!state.autoExtract; if(!state.autoExtract) state.autoExtractRule='off'; else if(state.autoExtractRule==='off') state.autoExtractRule='balanced'; $('extractSelect').value=state.autoExtractRule; save(); render(); }
 
@@ -1452,24 +1788,34 @@ $('extractSelect').addEventListener('change', e=>{ state.autoExtractRule=e.targe
 $('claimOfflineBtn').addEventListener('click', claimOffline);
 $('zoneSelect').addEventListener('change', e=>{ state.zoneId=Number(e.target.value); generateMap(); render(); });
 $('planSelect').addEventListener('change', e=>{ state.planId=e.target.value; generateMap(); render(); });
-$('dogSelect').addEventListener('change', e=>{ state.dogId=e.target.value; applyUpgrades(); updateGear(); render(); });
+$('contractSelect').addEventListener('change', e=>{ state.contractId=e.target.value; save(); render(); });
+$('dogSelect').addEventListener('change', e=>{
+  if(!isDogUnlocked(e.target.value)){
+    log('That dog is still locked.');
+    render();
+    return;
+  }
+  state.dogId=e.target.value; applyUpgrades(); updateGear(); save(); render();
+});
 
 window.buyUpgrade=buyUpgrade;
 window.buyResearch=buyResearch;
 window.resolveChoice=resolveChoice;
 window.dropLoot=dropLoot;
 window.dropStack=dropStack;
+window.toggleConsumable=toggleConsumable;
 window.toggleLootFilter=toggleLootFilter;
 window.claimQuest=claimQuest;
 window.buyPerk=buyPerk;
 window.equipItem=equipItem;
+window.buyHubOffer=buyHubOffer;
 window.addEventListener('beforeunload', () => localStorage.setItem('barkRaidersLastSeenV9', String(Date.now())));
 
 load();
 applyUpgrades(); updateGear(); generateMap();
 ensureLootFilter();
 ensureQuests();
-log('Welcome to Bark Raiders v0.12. More bosses, pricey traders, and biome assets are in.');
+log('Welcome to Bark Raiders v0.15. Proper dungeon generator, contracts, consumables, hazards, locked rooms, and keys are in.');
 log('Tip: set Auto-Extract to Balanced for normal raids, or Boss Hunt + After Boss Objective for boss attempts.');
 render();
 showOfflineReward();

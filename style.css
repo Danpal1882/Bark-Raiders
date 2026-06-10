@@ -586,3 +586,74 @@ select { width: 100%; background: #14100c; color: var(--text); border: 1px solid
   height: 28px;
   image-rendering: pixelated;
 }
+
+
+.hub-trader-panel {
+  margin-bottom: 16px;
+  border-color: rgba(255,217,112,.28);
+}
+.choice-panel {
+  align-self: start;
+}
+.choice-panel.hidden {
+  display: none;
+}
+
+
+.consumable-setup {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.consumable-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04);
+  border-radius: 12px;
+  padding: 7px 8px;
+  color: var(--muted);
+  font-size: .82rem;
+  cursor: pointer;
+}
+.consumable-chip input { accent-color: var(--accent); }
+.poi.locked {
+  border-color: rgba(185,140,255,.55);
+  box-shadow: 0 0 14px rgba(185,140,255,.16);
+}
+.poi.hazard-room {
+  box-shadow: inset 0 0 0 2px rgba(233,108,96,.32), 0 0 16px rgba(233,108,96,.08);
+}
+.poi.key-room {
+  border-color: rgba(255,217,112,.65);
+}
+.room-tag {
+  position: absolute;
+  right: -5px;
+  top: -7px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: .7rem;
+  background: rgba(10,8,6,.84);
+  border: 1px solid rgba(255,255,255,.15);
+  z-index: 4;
+}
+.dungeon-room-outline {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 16px;
+  background: rgba(255,255,255,.025);
+  z-index: 0;
+  pointer-events: none;
+}
+.path-line.locked-path {
+  background: linear-gradient(90deg, rgba(185,140,255,.08), rgba(185,140,255,.36), rgba(185,140,255,.08));
+}
+@media (max-width: 620px) {
+  .consumable-setup { grid-template-columns: 1fr; }
+}

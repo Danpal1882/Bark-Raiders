@@ -1,83 +1,99 @@
-# Bark Raiders v0.12
+# Bark Raiders v0.15
 
 Static GitHub Pages prototype.
 
-## What changed from v0.11
+## What changed from v0.14
 
-### More bosses
+### Properer dungeon generator
 
-Bosses are now selected from biome-specific boss pools rather than one fixed boss per zone.
+The dungeon generator is now more like a proper room layout:
 
-#### Ruined City bosses
-- Rat King
-- Crow Baron
-- Alley Butcher
+- rectangular rooms
+- room sizes
+- room outlines
+- corridor links
+- guaranteed connected dungeon
+- extra loop corridors
+- entrance room
+- boss den
+- biome-specific room names
+- biome-specific hazards
+- locked rooms
+- key rooms
+- force-open resource checks
 
-#### Sewer bosses
-- Gutter Maw
-- Drain Queen
-- Mouldback Raccoon
+This is still rendered with HTML/CSS so it stays GitHub Pages friendly, but the generation is much closer to a procedural dungeon than the previous node map.
 
-#### Factory bosses
-- Alpha Hound
-- Geargrinder Raccoon
-- Furnace Stray
+### Room hazards
 
-#### Farmland bosses
-- Trolley Tyrant
-- Barnstorm Crow
-- Old Yard Dog
+Rooms can now have hazards:
 
-Bosses now scale slightly by zone and have different mechanics, including:
-- summons
-- loot stealing
-- bleed damage
-- poison/filth pressure
-- armour checks
-- hazards
-- furnace burn damage
+- Flooded
+- Dark
+- Overgrown
+- Collapsing
+- Locked
+- Infested
 
-### Traders
+Hazards can affect threat, HP, loot, ambush chance, or access.
 
-Trader rooms now appear in generated dungeons.
+### Locked rooms and keys
 
-Traders sell expensive items using your kennel resources:
+Some rooms can be locked.
 
-- med packs
-- wood bundles
-- gun parts
-- ammo boxes
-- mystery weapon crates
-- biome-specific goods such as clean water, factory scrap, or farm supplies
+The dog can:
+- find dungeon keys in key rooms
+- use a key to unlock a room
+- force open some locked rooms using raid loot/resources
+- skip the room if it cannot be opened
 
-Prices are deliberately high so traders feel useful but not free value.
+### Contracts
 
-### Biome assets
+Added pre-raid contracts:
 
-Added dedicated SVG assets for:
+- No Contract
+- Wood Recovery
+- Pest Control
+- Trader Escort
+- Boss Bounty
+- Supply Rescue
+- Silent Run
 
-- Ruined City
-- Sewer
-- Factory
-- Farmland
-- Trader rooms
+Contracts track raid progress and pay out resources/treats if completed.
 
-The map now shows a biome badge using the new biome asset.
+### Consumables
 
-### Existing systems retained
+Choose up to two consumables before a raid:
 
-- room-and-corridor dungeon generation
-- biome loot bias
-- Jack Russell named Rustle
-- auto-extract
+- Smoke Biscuit
+- Squeaky Decoy
+- Emergency Medkit
+- Lucky Treat
+- Trader Token
+- Map Scrap
+
+Consumables give one-off raid effects.
+
+### Other fixes
+
+- Factory metal rooms now use scrap tile art instead of appearing blank.
+- Smoke Biscuit avoiding an enemy room now clears that room so the dog does not loop forever.
+
+## Existing systems retained
+
+- auto-extract fix
+- hub trader
+- locked dog roster
+- map-adjacent raid prompts
+- quest baseline tracking
+- biome bosses
+- biome/trader assets
 - offline progress
-- quests
 - perks
 - equipment inventory
 - loot filters
 - pack manager
 - roaming enemies
-- boss pathing
 - event choices
 
 ## Upload to GitHub Pages
@@ -98,8 +114,6 @@ Then GitHub:
 
 ## Save data
 
-This version keeps the v0.9 save key:
+This version still uses:
 
 `barkRaidersSaveV9`
-
-It remains compatible with the recent v0.9-v0.11 saves.
