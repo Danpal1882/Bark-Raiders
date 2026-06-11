@@ -15,6 +15,8 @@
       await loadScript('progression-v29.js');
       await loadScript('balance-v28.js');
       await loadScript('world-v29.js');
+      await loadScript('kennel-v30.js');
+      await loadScript('systems-v30.js');
       await loadScript('ui-v29.js');
       await loadScript('founder-onboarding.js');
     }catch(error){console.error(error);document.body.textContent='Could not finish starting Bark Raiders.';}
