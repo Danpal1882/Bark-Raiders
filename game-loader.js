@@ -12,14 +12,29 @@
     '  window.BREEDS_V23 = BREEDS_V23;\n  window.breedDef = breedDef;\n  window.v23MetaState = v23MetaState;\n  window.ensureRoster = ensureRoster;\n  window.currentRaider = currentRaider;\n  window.masteryFor = masteryFor;\n\n  loadV23Meta();'
   );
 
+  function loadScript(src){
+    return new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src=src;
+      script.async=false;
+      script.onload=resolve;
+      script.onerror=()=>reject(new Error(`Could not load ${src}.`));
+      document.body.appendChild(script);
+    });
+  }
+
   const runtimeUrl = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
   const runtime = document.createElement('script');
   runtime.src = runtimeUrl;
-  runtime.onload = () => {
+  runtime.onload = async () => {
     URL.revokeObjectURL(runtimeUrl);
-    const onboarding = document.createElement('script');
-    onboarding.src = 'founder-onboarding.js';
-    document.body.appendChild(onboarding);
+    try{
+      await loadScript('dungeon-v26.js');
+      await loadScript('founder-onboarding.js');
+    }catch(error){
+      console.error(error);
+      document.body.textContent='Could not finish starting Bark Raiders.';
+    }
   };
   runtime.onerror = () => {
     URL.revokeObjectURL(runtimeUrl);
