@@ -1,0 +1,45 @@
+.dashboard-map-panel { overflow: hidden; }
+#map.map {
+  min-height: 0;
+  aspect-ratio: 3 / 2;
+  background: #111;
+  border-color: rgba(255,217,112,.25);
+}
+#map::before, #map::after { display: none; }
+#raidWorldCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 3 / 2;
+  image-rendering: pixelated;
+  background: #111;
+}
+.world-overlay {
+  position: absolute;
+  inset: 10px 10px auto 10px;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+}
+.world-overlay span {
+  padding: 6px 9px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  background: rgba(13,10,8,.8);
+  color: #fff4dc;
+  font-size: .67rem;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+.world-mode { color: #8acf7f !important; }
+.compact-legend { opacity: .84; }
+@media (max-width: 620px) {
+  #map.map { min-height: 360px; aspect-ratio: auto; }
+  #raidWorldCanvas { height: 360px; object-fit: cover; }
+  .world-overlay { inset: 6px 6px auto 6px; }
+  .world-overlay span { padding: 4px 6px; font-size: .55rem; }
+}
