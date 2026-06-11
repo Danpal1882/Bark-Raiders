@@ -19,7 +19,9 @@
       })
       .then(html => {
         const runtime = '<script src="startup-compat.js"><\/script><script src="game-loader.js"><\/script>';
-        const patched = html.replace('<script src="game.js"><\/script>', runtime);
+        const styles = '<link rel="stylesheet" href="dungeon-v26.css">';
+        let patched = html.replace('</head>', styles + '</head>');
+        patched = patched.replace('<script src="game.js"><\/script>', runtime);
         if(patched === html) throw new Error('Could not activate the Bark Raiders runtime.');
         document.open();
         document.write(patched);
