@@ -18,9 +18,11 @@
         return response.text();
       })
       .then(html => {
-        const onboarding = '<script src="founder-onboarding.js"><\/script>';
+        const runtime = '<script src="startup-compat.js"><\/script><script src="game-loader.js"><\/script>';
+        const patched = html.replace('<script src="game.js"></script>', runtime);
+        if(patched === html) throw new Error('Could not activate the Bark Raiders runtime.');
         document.open();
-        document.write(html.replace('</body>', onboarding + '</body>'));
+        document.write(patched);
         document.close();
       })
       .catch(error => { document.body.textContent = error.message; });
