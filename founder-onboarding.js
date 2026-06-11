@@ -1,12 +1,14 @@
 (function(){
-  const saveKeys = [
-    'barkRaidersSaveV9',
-    'barkRaidersSaveV8',
-    'barkRaidersSaveV7',
-    'barkRaidersMetaV23',
-  ];
-  const hasExistingProgress = saveKeys.some(key => localStorage.getItem(key));
-  if(hasExistingProgress || !window.v24OpenCreator || !state.v23) return;
+  let savedRoster = [];
+  try{
+    savedRoster = JSON.parse(localStorage.getItem('barkRaidersMetaV23') || '{}').roster || [];
+  } catch(e){
+    console.warn('Could not inspect saved kennel roster', e);
+  }
+  const hasChosenRaider = savedRoster.length > 1 || savedRoster.some(raider =>
+    raider.name !== 'Mochi' || !['shiba', 'raider1'].includes(raider.breed)
+  );
+  if(hasChosenRaider || !window.v24OpenCreator || !state.v23) return;
 
   state.v23.needsFounder = true;
 
