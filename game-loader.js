@@ -30,6 +30,7 @@
     URL.revokeObjectURL(runtimeUrl);
     try{
       await loadScript('dungeon-v26.js');
+      await loadScript('world-v27.js');
       await loadScript('founder-onboarding.js');
     }catch(error){
       console.error(error);
