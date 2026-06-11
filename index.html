@@ -3,31 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bark Raiders v0.27</title>
+  <title>Bark Raiders v0.29</title>
   <style>
-    html, body { margin: 0; min-height: 100%; background: #120e0b; color: #fff4dc; font-family: system-ui, sans-serif; }
-    body { display: grid; place-items: center; }
+    html,body{margin:0;min-height:100%;background:#081019;color:#edf4f5;font-family:system-ui,sans-serif}body{display:grid;place-items:center}
   </style>
 </head>
 <body>
   <p>Opening the kennel...</p>
   <script>
     fetch('game.html')
-      .then(response => {
-        if(!response.ok) throw new Error('Could not load Bark Raiders.');
-        return response.text();
+      .then(response=>{if(!response.ok)throw new Error('Could not load Bark Raiders.');return response.text();})
+      .then(html=>{
+        const runtime='<script src="startup-compat.js"><\/script><script src="game-loader-v29.js"><\/script>';
+        const styles='<link rel="stylesheet" href="dungeon-v26.css"><link rel="stylesheet" href="world-v28.css"><link rel="stylesheet" href="ui-v29.css">';
+        let patched=html.replace('</head>',styles+'</head>');
+        patched=patched.replace('<script src="game.js"><\/script>',runtime);
+        if(patched===html)throw new Error('Could not activate the Bark Raiders runtime.');
+        document.open();document.write(patched);document.close();
       })
-      .then(html => {
-        const runtime = '<script src="startup-compat.js"><\/script><script src="game-loader.js"><\/script>';
-        const styles = '<link rel="stylesheet" href="dungeon-v26.css"><link rel="stylesheet" href="world-v27.css">';
-        let patched = html.replace('</head>', styles + '</head>');
-        patched = patched.replace('<script src="game.js"><\/script>', runtime);
-        if(patched === html) throw new Error('Could not activate the Bark Raiders runtime.');
-        document.open();
-        document.write(patched);
-        document.close();
-      })
-      .catch(error => { document.body.textContent = error.message; });
+      .catch(error=>{document.body.textContent=error.message;});
   </script>
 </body>
 </html>
