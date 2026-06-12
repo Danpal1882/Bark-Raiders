@@ -1,6 +1,16 @@
-# Bark Raiders v0.32
+# Bark Raiders v0.33
 
 Static GitHub Pages prototype.
+
+## What changed in v0.33
+
+- Added passive kennel assignments for idle raiders with an eight-hour reward cap.
+- Added Scrap Patrol, Supply Run, and Timber Watch jobs with visible progress and claimable resources.
+- Dog appearance is now stored per raider instead of globally across the whole roster.
+- Added a compact appearance editor for the active raider in the kennel.
+- Inventory cards are sorted by usefulness and show score comparisons against equipped gear.
+- Added floating combat feedback for damage, critical hits, misses, reloads, armour blocks, and empty magazines.
+- Added compact victory and passive-reward notifications.
 
 ## What changed in v0.32
 

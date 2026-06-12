@@ -1285,6 +1285,56 @@ html[data-theme] .panel {
   .stock-badge { grid-column:3; }
 }
 
+/* v0.33 idle assignments, per-raider style, comparisons, and combat feedback */
+.kennel-assignments,.active-raider-style {
+  margin-top:14px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:linear-gradient(145deg,rgba(102,194,165,.08),rgba(105,175,226,.04));
+}
+.assignment-heading { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:10px; }
+.assignment-heading > div { display:grid; gap:3px; }
+.assignment-heading span { color:var(--muted); font-size:.78rem; }
+.idle-badge { color:var(--accent-2)!important; border:1px solid color-mix(in srgb,var(--accent-2) 45%,transparent); border-radius:999px; padding:4px 7px; font-size:.65rem!important; font-weight:900; letter-spacing:.08em; }
+.assignment-list { display:grid; gap:9px; }
+.assignment-card { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(0,0,0,.12); }
+.assignment-card > div:first-child { display:grid; gap:4px; }
+.assignment-card span,.assignment-card small { color:var(--muted); font-size:.76rem; }
+.assignment-card.working { border-color:color-mix(in srgb,var(--accent-2) 42%,var(--border)); }
+.assignment-actions,.job-buttons { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; }
+.job-buttons button { padding:7px 9px; font-size:.72rem; }
+.job-progress { width:100%; height:5px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.08); }
+.job-progress i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--accent-2),var(--blue)); }
+.raider-style-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+.raider-style-grid label { display:grid; gap:4px; color:var(--muted); font-size:.72rem; font-weight:800; }
+.raider-style-grid select { width:100%; }
+.compare-pill { display:inline-flex; width:max-content; margin-top:5px; padding:3px 7px; border-radius:999px; font-size:.67rem!important; font-weight:900; }
+.compare-pill.better { color:#8df0b2; background:rgba(63,185,112,.14); }
+.compare-pill.worse { color:#f29a9a; background:rgba(226,112,112,.13); }
+.compare-pill.same { color:var(--muted); background:rgba(255,255,255,.06); }
+#map { position:relative; }
+.combat-fx-layer { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:5; }
+.combat-fx { position:absolute; left:50%; top:43%; color:#fff; font-size:1.05rem; font-weight:1000; text-shadow:0 2px 7px #000; animation:combatFloatV33 .9s ease-out forwards; }
+.combat-fx.crit { color:#ffd66e; font-size:1.25rem; }
+.combat-fx.armour { color:#8bdcff; }
+.combat-fx.danger { color:#ff8787; }
+.combat-fx.miss,.combat-fx.reload { color:#c3d1d8; font-size:.82rem; }
+@keyframes combatFloatV33 { 0%{opacity:0;transform:translate(-50%,8px) scale(.8)} 18%{opacity:1;transform:translate(-50%,0) scale(1.08)} 100%{opacity:0;transform:translate(-50%,-42px) scale(1)} }
+.game-toast-stack { position:fixed; right:18px; bottom:18px; z-index:1000; display:grid; gap:9px; width:min(320px,calc(100vw - 28px)); pointer-events:none; }
+.game-toast { display:grid; gap:3px; padding:12px 14px; border:1px solid var(--border); border-left:4px solid var(--accent-2); border-radius:12px; color:var(--text); background:rgba(12,24,33,.96); box-shadow:var(--shadow); animation:toastInV33 .25s ease-out; }
+.game-toast span { color:var(--muted); font-size:.8rem; }
+.game-toast.victory { border-left-color:var(--gold); }
+@keyframes toastInV33 { from{opacity:0;transform:translateY(12px)} }
+@media(max-width:800px){
+  .raider-style-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .assignment-card { grid-template-columns:1fr; }
+  .assignment-actions,.job-buttons { justify-content:flex-start; }
+}
+@media(prefers-reduced-motion:reduce){
+  .combat-fx,.game-toast { animation:none; }
+}
+
 
 /* v0.17 floor progression and injury UI */
 #progressStatus .gear span {
