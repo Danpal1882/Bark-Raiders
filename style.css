@@ -1335,6 +1335,20 @@ html[data-theme] .panel {
   .combat-fx,.game-toast { animation:none; }
 }
 
+/* v0.34 atmosphere, station artwork, and ammunition feedback */
+.station-art-v34 {
+  width:72px;
+  height:72px;
+  object-fit:contain;
+  margin:0 auto 4px;
+  image-rendering:auto;
+  filter:drop-shadow(0 7px 8px rgba(0,0,0,.3));
+}
+.roster-card .mini-dog { width:62px; height:62px; object-fit:contain; image-rendering:auto; }
+.low-ammo-v34 { color:#ff8c82; font-weight:1000; animation:ammoPulseV34 .7s ease-in-out infinite alternate; }
+@keyframes ammoPulseV34 { to{opacity:.55} }
+@media(prefers-reduced-motion:reduce){.low-ammo-v34{animation:none}}
+
 
 /* v0.17 floor progression and injury UI */
 #progressStatus .gear span {

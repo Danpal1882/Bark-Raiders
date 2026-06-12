@@ -1,17 +1,17 @@
 (function(){
-  const W=48,H=32,VW=24,VH=16,T=28;
+  const W=48,H=32,VW=30,VH=20,T=24;
   const palettes={
-    city:['#34363a','#2c2f33','#17191c','#565a60'],
-    sewer:['#263a31','#1f3029','#0d1814','#426a55'],
-    factory:['#3b302a','#302621','#171311','#74513d'],
-    farmland:['#3d4028','#33351f','#171b12','#626a37'],
+    city:['#34363a','#2c2f33','#20242a','#565a60'],
+    sewer:['#263a31','#1f3029','#14261f','#426a55'],
+    factory:['#3b302a','#302621','#211b18','#74513d'],
+    farmland:['#3d4028','#33351f','#202613','#626a37'],
   };
   const art={
-    base:'assets/tile-base.svg',crate:'assets/tile-crate.svg',tree:'assets/tile-tree.svg',
-    grove:'assets/tile-grove.svg',food:'assets/tile-food.svg',water:'assets/tile-water.svg',
-    scrap:'assets/tile-scrap.svg',medical:'assets/tile-medical.svg',weapon:'assets/tile-weapon.svg',
+    base:'assets/sprites/v34/loot/02-06.png',crate:'assets/sprites/v34/loot/01-01.png',tree:'assets/tile-tree.svg',
+    grove:'assets/tile-grove.svg',food:'assets/sprites/v34/loot/01-04.png',water:'assets/sprites/v34/loot/01-05.png',
+    scrap:'assets/sprites/v34/loot/01-06.png',medical:'assets/sprites/v34/loot/01-03.png',weapon:'assets/sprites/v34/loot/02-01.png',
     event:'assets/tile-event.svg',exit:'assets/tile-event.svg',trader:'assets/tile-trader.svg',
-    enemy:'assets/tile-enemy.svg',rare:'assets/tile-rare.svg',boss:'assets/tile-boss.svg',
+    enemy:'assets/tile-enemy.svg',rare:'assets/sprites/v34/loot/02-03.png',boss:'assets/sprites/v34/loot/02-06.png',
   };
   const cache=new Map();
   let frame=0,last=performance.now(),baseGenerate=generateMap,baseMove=moveDog;
@@ -20,16 +20,29 @@
   const floor=(w,x,y)=>inside(x,y)&&w.tiles[y][x]===1;
   const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   const SHIBA_FRAMES=[
-    'assets/sprites/shiba-v31/web/01.png',
-    'assets/sprites/shiba-v31/web/02.png',
-    'assets/sprites/shiba-v31/web/03.png',
-    'assets/sprites/shiba-v31/web/04.png',
+    'assets/sprites/v34/dog/01.png','assets/sprites/v34/dog/02.png',
+    'assets/sprites/v34/dog/03.png','assets/sprites/v34/dog/04.png',
+    'assets/sprites/v34/dog/05.png','assets/sprites/v34/dog/06.png',
+    'assets/sprites/v34/dog/07.png','assets/sprites/v34/dog/08.png',
   ];
+  const BREED_FRAMES=Object.fromEntries(['jack','collie','dachshund','pom','bulldog','lab','greyhound'].map(key=>[
+    key,Array.from({length:5},(_,i)=>`assets/sprites/v34/breeds/${key}/${String(i+1).padStart(2,'0')}.png`)
+  ]));
+  function activeBreedKey(){
+    const rosterDog=state.roster?.find(item=>item.id===state.dogId);
+    return rosterDog?.breed||'shiba';
+  }
   const ENEMY_FRAMES={
-    rat:['assets/sprites/enemies-v32/rat/web/01.png','assets/sprites/enemies-v32/rat/web/02.png','assets/sprites/enemies-v32/rat/web/03.png'],
-    raccoon:['assets/sprites/enemies-v32/raccoon/web/01.png','assets/sprites/enemies-v32/raccoon/web/02.png','assets/sprites/enemies-v32/raccoon/web/03.png'],
-    crow:['assets/sprites/enemies-v32/crow/web/01.png','assets/sprites/enemies-v32/crow/web/02.png','assets/sprites/enemies-v32/crow/web/03.png'],
-    stray:['assets/sprites/enemies-v32/stray/web/01.png','assets/sprites/enemies-v32/stray/web/02.png','assets/sprites/enemies-v32/stray/web/03.png'],
+    rat:Array.from({length:6},(_,i)=>`assets/sprites/v34/enemies/01-${String(i+1).padStart(2,'0')}.png`),
+    raccoon:Array.from({length:6},(_,i)=>`assets/sprites/v34/enemies/02-${String(i+1).padStart(2,'0')}.png`),
+    crow:Array.from({length:6},(_,i)=>`assets/sprites/v34/enemies/03-${String(i+1).padStart(2,'0')}.png`),
+    stray:Array.from({length:6},(_,i)=>`assets/sprites/v34/enemies/04-${String(i+1).padStart(2,'0')}.png`),
+  };
+  const ENVIRONMENT={
+    city:Array.from({length:6},(_,i)=>`assets/sprites/v34/environment/01-${String(i+1).padStart(2,'0')}.png`),
+    sewer:Array.from({length:6},(_,i)=>`assets/sprites/v34/environment/02-${String(i+1).padStart(2,'0')}.png`),
+    factory:Array.from({length:6},(_,i)=>`assets/sprites/v34/environment/03-${String(i+1).padStart(2,'0')}.png`),
+    farmland:Array.from({length:6},(_,i)=>`assets/sprites/v34/environment/04-${String(i+1).padStart(2,'0')}.png`),
   };
   function enemyKind(enemy){
     const src=String(enemy?.template?.sprite||enemy?.sprite||'').toLowerCase(),name=String(enemy?.template?.name||enemy?.name||'').toLowerCase();
@@ -56,10 +69,10 @@
   }
   function enemyProfile(enemy){
     const name=String(enemy?.name||'').toLowerCase();
-    if(name.includes('crow')) return {name:'Scrap rifle',range:6.5,color:'#ef8cff',width:2,speed:22};
-    if(name.includes('raccoon')) return {name:'Junk pistol',range:4.8,color:'#ff8b67',width:3,speed:18};
-    if(name.includes('rat')) return {name:'Sling shot',range:3.8,color:'#c6ef73',width:3,speed:14};
-    return {name:'Close assault',range:1.25,color:'#ff6c69',width:3,speed:16};
+    if(name.includes('crow')) return {name:'Scrap rifle',range:7,color:'#ef8cff',width:2,speed:22};
+    if(name.includes('raccoon')) return {name:'Junk pistol',range:5.8,color:'#ff8b67',width:3,speed:18};
+    if(name.includes('rat')) return {name:'Sling shot',range:4.8,color:'#c6ef73',width:3,speed:14};
+    return {name:'Close assault',range:3.8,color:'#ff6c69',width:3,speed:16};
   }
   function lineOfSight(w,a,b){
     let x0=Math.floor(a.x),y0=Math.floor(a.y),x1=Math.floor(b.x),y1=Math.floor(b.y);
@@ -172,7 +185,7 @@
     const map=$('map');if(!map)return;let c=map.querySelector('#raidWorldCanvas');if(!c){map.innerHTML='';c=document.createElement('canvas');c.id='raidWorldCanvas';c.width=VW*T;c.height=VH*T;map.appendChild(c);const o=document.createElement('div');o.className='world-overlay';o.innerHTML='<span class="world-mode">AUTO SCAVENGE</span><span class="world-progress"></span>';map.appendChild(o);}return c;
   }
   function draw(time=performance.now()){
-    const w=state.world,c=canvas();if(!w?.ready||!c)return;const x=c.getContext('2d'),p=palettes[biomeKey()]||palettes.city,camX=clamp(w.dog.x-VW/2,0,W-VW),camY=clamp(w.dog.y-VH/2,0,H-VH);w.camera.x+=(camX-w.camera.x)*.08;w.camera.y+=(camY-w.camera.y)*.08;x.clearRect(0,0,c.width,c.height);x.save();x.translate(-w.camera.x*T,-w.camera.y*T);
+    const w=state.world,c=canvas();if(!w?.ready||!c)return;const x=c.getContext('2d'),key=biomeKey(),p=palettes[key]||palettes.city,camX=clamp(w.dog.x-VW/2,0,W-VW),camY=clamp(w.dog.y-VH/2,0,H-VH);w.camera.x+=(camX-w.camera.x)*.24;w.camera.y+=(camY-w.camera.y)*.24;x.clearRect(0,0,c.width,c.height);x.save();x.translate(-w.camera.x*T,-w.camera.y*T);
     for(let y=0;y<H;y++)for(let xx=0;xx<W;xx++){
       x.fillStyle=floor(w,xx,y)?((xx+y)%2?p[0]:p[1]):p[2];x.fillRect(xx*T,y*T,T,T);
       if(floor(w,xx,y)){
@@ -183,22 +196,44 @@
         if(biomeKey()==='factory'){x.strokeStyle='#d78c4b';x.lineWidth=2;x.beginPath();x.moveTo(xx*T+3,y*T+8);x.lineTo(xx*T+T-3,y*T+8);x.stroke();}
         if(biomeKey()==='farmland'){x.strokeStyle='#9eb35e';x.beginPath();x.moveTo(xx*T+5,y*T+4);x.lineTo(xx*T+5,y*T+T-4);x.stroke();}
         x.globalAlpha=1;
+      }else{
+        x.globalAlpha=.26;
+        if(key==='city'){x.strokeStyle='#626b73';x.strokeRect(xx*T+3,y*T+3,T-6,T-6);x.beginPath();x.moveTo(xx*T+4,y*T+8);x.lineTo(xx*T+T-4,y*T+8);x.stroke();}
+        if(key==='sewer'){x.strokeStyle='#4e876c';x.beginPath();x.arc(xx*T+T/2,y*T+T/2,5+(xx+y)%4,0,Math.PI);x.stroke();}
+        if(key==='factory'){x.strokeStyle='#8a5d43';x.beginPath();x.moveTo(xx*T+4,y*T+T/2);x.lineTo(xx*T+T-4,y*T+T/2);x.stroke();}
+        if(key==='farmland'){x.strokeStyle='#758449';x.beginPath();x.moveTo(xx*T+5,y*T+3);x.lineTo(xx*T+5,y*T+T-3);x.moveTo(xx*T+12,y*T+3);x.lineTo(xx*T+12,y*T+T-3);x.stroke();}
+        x.globalAlpha=1;
+      }
+    }
+    const scenery=ENVIRONMENT[key]||ENVIRONMENT.city;
+    for(let y=0;y<H;y++)for(let xx=0;xx<W;xx++){
+      const adjacent=!floor(w,xx,y)&&[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>floor(w,xx+dx,y+dy));
+      if(adjacent&&(xx*7+y*5)%4===0){
+        const image=img(scenery[(xx*17+y*11)%scenery.length]);
+        if(image.complete)x.drawImage(image,xx*T-6,y*T-12,T+12,T+12);
+      }else if(floor(w,xx,y)&&(xx*31+y*19)%113===0){
+        const image=img(scenery[2+((xx+y)%4)]);
+        if(image.complete)x.save(),x.globalAlpha=.72,x.drawImage(image,xx*T-4,y*T-8,T+8,T+8),x.restore();
       }
     }
     for(const prop of w.props){if(prop.searched)continue;const n=state.map.find(v=>v.id===prop.roomId);if(!n||n.type==='empty')continue;const i=img(art[n.type]||art.event),size=n.type==='boss'?48:34,bob=Math.sin(time/450+prop.pulse)*2;if(i.complete)x.drawImage(i,prop.x*T-size/2,prop.y*T-size/2+bob,size,size);}
     const actor=(a,src,size,facing)=>{const i=img(src);x.save();x.translate(a.x*T,a.y*T);x.scale(facing,1);if(i.complete)x.drawImage(i,-size/2,-size*.72,size,size);x.restore();};
     w.enemies.forEach(e=>{
       if(!e.active)return;
-      const frames=ENEMY_FRAMES[enemyKind(e)],pose=time<e.hitUntil?2:time<e.poseUntil?1:0;
-      actor(e,frames[pose],46,e.facing);
+      const frames=ENEMY_FRAMES[enemyKind(e)],moving=e.path.length>0&&state.mode==='roaming';
+      const pose=time<e.hitUntil?5:time<e.poseUntil?4:moving?1+Math.floor(time/130)%3:0;
+      actor(e,frames[pose],58,e.facing);
       if(state.combat?.enemy?.sourceId===e.id&&state.combat.enemy.bossFight)drawBossDetails(x,e,state.combat.enemy,time);
     });
-    if(String(state.dog.breed||'').includes('Shiba')){
+    const breedKey=activeBreedKey();
+    if(breedKey==='shiba'){
       const moving=w.dog.path.length>0&&state.mode==='roaming';
-      const pose=time<w.dog.hitUntil?3:time<w.dog.poseUntil?2:moving&&Math.floor(time/180)%2?1:0;
-      actor(w.dog,SHIBA_FRAMES[pose],58,w.dog.facing);
+      const pose=time<w.dog.hitUntil?6:time<w.dog.poseUntil?5:moving?1+Math.floor(time/120)%4:0;
+      actor(w.dog,SHIBA_FRAMES[pose],72,w.dog.facing);
+    }else if(BREED_FRAMES[breedKey]){
+      const moving=w.dog.path.length>0&&state.mode==='roaming';
+      actor(w.dog,BREED_FRAMES[breedKey][moving?1+Math.floor(time/125)%4:0],70,w.dog.facing);
     }else actor(w.dog,state.dog.sprite,48,w.dog.facing);
-    window.customisationV32?.drawLoadout?.(x,w,time);
     w.projectiles=w.projectiles.filter(projectile=>{
       const elapsed=time-projectile.started,progress=clamp(elapsed/projectile.duration,0,1);
       const px=projectile.from.x+(projectile.to.x-projectile.from.x)*progress;
