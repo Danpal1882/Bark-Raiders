@@ -45,12 +45,14 @@
     bossMechanic(combatEnemy,notes);
     distance=Math.hypot(enemy.x-dog.x,enemy.y-dog.y);
     if(distance>enemyWeapon.range){
-      const step=Math.min(.75,distance-enemyWeapon.range+.1);
+      const step=Math.min(1.45,distance-enemyWeapon.range+.1);
       enemy.x+=(dog.x-enemy.x)/distance*step;
       enemy.y+=(dog.y-enemy.y)/distance*step;
       enemy.facing=dog.x<enemy.x?-1:1;
       notes.push(`${combatEnemy.name} advances.`);
-    }else{
+      distance=Math.hypot(enemy.x-dog.x,enemy.y-dog.y);
+    }
+    if(distance<=enemyWeapon.range){
       window.setTimeout(()=>window.worldV29.fireProjectile('enemy'),180);
       const dodgeChance=Math.min(28,state.dog.speed*4+(state.research.bossMap&&combatEnemy.bossFight?3:0));
       if(Math.random()*100<dodgeChance) notes.push(`${state.dog.name} dodges the shot.`);
@@ -99,10 +101,10 @@
   render=function(){
     baseRenderV31();
     if(!String(state.dog.breed||'').includes('Shiba')) return;
-    const active=state.mode==='combat'?'assets/sprites/shiba-v31/web/03.png':'assets/sprites/shiba-v31/web/01.png';
+    const active=state.mode==='combat'?'assets/sprites/v34/dog/06.png':'assets/sprites/v34/dog/01.png';
     if($('combatDogSprite')) $('combatDogSprite').src=active;
-    if($('heroDogSprite')) $('heroDogSprite').src='assets/sprites/shiba-v31/web/01.png';
-    if($('creatorPreviewSprite')&&String($('modalRaiderBreed')?.value||'shiba')==='shiba') $('creatorPreviewSprite').src='assets/sprites/shiba-v31/web/01.png';
+    if($('heroDogSprite')) $('heroDogSprite').src='assets/sprites/v34/dog/01.png';
+    if($('creatorPreviewSprite')&&String($('modalRaiderBreed')?.value||'shiba')==='shiba') $('creatorPreviewSprite').src='assets/sprites/v34/dog/01.png';
   };
   render();
 })();

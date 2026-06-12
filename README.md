@@ -1,6 +1,18 @@
-# Bark Raiders v0.33
+# Bark Raiders v0.34
 
 Static GitHub Pages prototype.
+
+## What changed in v0.34
+
+- Replaced the two-pose dog movement with a grounded four-frame walk cycle.
+- Integrated the tactical armour into the dog sprite instead of drawing a floating outline over it.
+- Added full walk, attack, and hurt animation sets for rats, raccoons, crows, and hostile hounds.
+- Zoomed the raid camera out and tightened its follow response.
+- Added automatic combat retreat when a raider runs out of ammunition.
+- Increased base ammunition capacity and added emergency ammunition to more searchable areas.
+- Replaced black map boundaries with biome scenery including ruined walls, burnt cars, pipes, machinery, fences, ditches, and rubble.
+- Added detailed crate, ammunition, medical, supply, weapon, armour, backpack, and boss-cache assets.
+- Replaced kennel station emoji art with illustrated station assets.
 
 ## What changed in v0.33
 
