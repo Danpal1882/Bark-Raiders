@@ -1,4 +1,12 @@
-# Bark Raiders v0.34
+# Bark Raiders v0.35
+
+## v0.35 Combat, Loot, and Presentation Polish
+
+- Added enemy attack telegraphs, muzzle flashes, impact sparks, camera response, grounded movement trails, loot glows, and biome lighting.
+- Added clear cache-opening rewards, light optional combat audio, low-health/ammo warnings, and a player-controlled tactical retreat.
+- Raised the emergency starting-ammo floor without making ammunition unlimited.
+- Added a kennel field-loadout portrait showing the active weapon, helmet, body armour, backpack, durability, and equipped status.
+- Refined raid atmosphere and combat HUD presentation while keeping existing saves compatible.
 
 Static GitHub Pages prototype.
 

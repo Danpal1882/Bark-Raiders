@@ -17,10 +17,10 @@ const SPRITES = {
 };
 
 const TILE_ART = {
-  base:'assets/tile-base.svg', trader:'assets/tile-trader.svg', city:'assets/biome-city.svg', sewer:'assets/biome-sewer.svg', factory:'assets/biome-factory.svg', farmland:'assets/biome-farmland.svg', crate:'assets/tile-crate.svg', tree:'assets/tile-tree.svg', grove:'assets/tile-grove.svg',
-  food:'assets/tile-food.svg', water:'assets/tile-water.svg', scrap:'assets/tile-scrap.svg', medical:'assets/tile-medical.svg', metal:'assets/tile-scrap.svg',
-  weapon:'assets/tile-weapon.svg', event:'assets/tile-event.svg', enemy:'assets/tile-enemy.svg', rare:'assets/tile-rare.svg',
-  boss:'assets/tile-boss.svg', cleared:'assets/tile-cleared.svg', empty:'assets/tile-empty.svg',
+  base:'assets/sprites/v34/loot/03-06.png', trader:'assets/sprites/v34/loot/03-04.png', city:'assets/biome-city.svg', sewer:'assets/biome-sewer.svg', factory:'assets/biome-factory.svg', farmland:'assets/biome-farmland.svg', crate:'assets/sprites/v34/loot/01-01.png', tree:'assets/tile-tree.svg', grove:'assets/tile-grove.svg',
+  food:'assets/sprites/v34/loot/01-04.png', water:'assets/sprites/v34/loot/01-05.png', scrap:'assets/sprites/v34/loot/01-06.png', medical:'assets/sprites/v34/loot/01-03.png', metal:'assets/sprites/v34/loot/01-06.png',
+  weapon:'assets/sprites/v34/loot/02-01.png', event:'assets/tile-event.svg', enemy:'assets/tile-enemy.svg', rare:'assets/sprites/v34/loot/02-03.png',
+  boss:'assets/sprites/v34/loot/02-03.png', cleared:'assets/tile-cleared.svg', empty:'assets/tile-empty.svg',
 };
 
 const DUNGEON_ART = {

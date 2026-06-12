@@ -1349,6 +1349,73 @@ html[data-theme] .panel {
 @keyframes ammoPulseV34 { to{opacity:.55} }
 @media(prefers-reduced-motion:reduce){.low-ammo-v34{animation:none}}
 
+/* v0.35 combat readability, loot feedback, and kennel loadout presentation */
+.loadout-portrait-v35 {
+  margin-top:14px;
+  padding:14px;
+  border:1px solid color-mix(in srgb,var(--blue) 34%,var(--border));
+  border-radius:14px;
+  background:
+    radial-gradient(circle at 18% 30%,rgba(103,204,225,.13),transparent 34%),
+    linear-gradient(145deg,rgba(14,37,48,.96),rgba(9,26,35,.88));
+}
+.loadout-portrait-heading { display:flex; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.loadout-portrait-heading > div { display:grid; gap:3px; }
+.loadout-portrait-heading span { color:var(--muted); font-size:.76rem; }
+.loadout-portrait-body { display:grid; grid-template-columns:minmax(210px,.7fr) minmax(280px,1.3fr); gap:14px; align-items:stretch; }
+.dog-loadout-stage {
+  position:relative;
+  min-height:190px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(30,57,68,.65),rgba(4,16,23,.85));
+}
+.dog-loadout-stage::after {
+  content:"";
+  position:absolute;
+  left:12%;
+  right:12%;
+  bottom:18px;
+  height:18px;
+  border-radius:50%;
+  background:rgba(0,0,0,.42);
+  filter:blur(7px);
+}
+.dog-loadout-stage img { position:relative; z-index:2; width:150px; height:150px; object-fit:contain; filter:drop-shadow(0 12px 9px rgba(0,0,0,.4)); animation:kennelIdleV35 2.2s ease-in-out infinite; }
+.kennel-spotlight { position:absolute; inset:5% 10% 12%; border-radius:50%; background:radial-gradient(circle,rgba(91,211,220,.19),transparent 67%); }
+.field-ready-label { position:absolute; z-index:3; left:12px; bottom:10px; color:#83e6d2; font-size:.63rem; font-weight:1000; letter-spacing:.12em; }
+.loadout-slot-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.loadout-slot-list article { display:grid; align-content:center; gap:4px; min-height:78px; padding:10px 12px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(0,0,0,.14); }
+.loadout-slot-list small { color:var(--accent-2); text-transform:uppercase; letter-spacing:.08em; font-weight:900; }
+.loadout-slot-list span { color:var(--muted); font-size:.72rem; }
+.loadout-slot-list .empty { color:var(--muted); font-style:italic; }
+.combat-controls-v35 { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+.combat-readout { display:grid; gap:2px; }
+.combat-readout span { color:var(--muted); font-size:.72rem; }
+.combat-readout strong { color:#9de7d0; font-size:.82rem; }
+.combat-readout.danger strong { color:#ff9a91; }
+.retreat-button-v35 { white-space:nowrap; border-color:rgba(255,151,118,.38); }
+.combat-danger-v35 .compact-combat { border-color:rgba(255,105,100,.46); box-shadow:0 0 0 1px rgba(255,105,100,.08),var(--shadow); }
+.player-hit-v35 #map { filter:saturate(.82) brightness(.88); }
+#map.loot-open-v35 { box-shadow:0 0 0 2px rgba(112,222,255,.3),0 0 28px rgba(112,222,255,.18); }
+.v35-toast.danger { border-left-color:#ff756e; }
+.v35-toast.muted { border-left-color:#77858d; }
+@keyframes kennelIdleV35 { 50%{transform:translateY(-4px)} }
+@media(max-width:760px){
+  .loadout-portrait-body { grid-template-columns:1fr; }
+  .dog-loadout-stage { min-height:170px; }
+}
+@media(max-width:480px){
+  .loadout-slot-list { grid-template-columns:1fr; }
+  .combat-controls-v35 { grid-template-columns:1fr; }
+}
+@media(prefers-reduced-motion:reduce){
+  .dog-loadout-stage img { animation:none; }
+}
+
 
 /* v0.17 floor progression and injury UI */
 #progressStatus .gear span {
