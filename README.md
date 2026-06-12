@@ -1,6 +1,162 @@
-# Bark Raiders v0.25
+# Bark Raiders v0.33
 
 Static GitHub Pages prototype.
+
+## What changed in v0.33
+
+- Added passive kennel assignments for idle raiders with an eight-hour reward cap.
+- Added Scrap Patrol, Supply Run, and Timber Watch jobs with visible progress and claimable resources.
+- Dog appearance is now stored per raider instead of globally across the whole roster.
+- Added a compact appearance editor for the active raider in the kennel.
+- Inventory cards are sorted by usefulness and show score comparisons against equipped gear.
+- Added floating combat feedback for damage, critical hits, misses, reloads, armour blocks, and empty magazines.
+- Added compact victory and passive-reward notifications.
+
+## What changed in v0.32
+
+- Added Primary, Sidearm, Helmet, Body Armour, Backpack, and Charm slots.
+- Added a modern weapon database with damage, range, recoil, magazine size, fire rate, penetration, ammunition type, condition, and visual identity.
+- Added armour value, coverage, durability, carry modifiers, repair, and salvage.
+- Added procedural rarity and affix rolls for raid equipment.
+- Added unique themed equipment drops for twelve bosses.
+- Added dog face, eye, ear, neckwear, and harness customisation.
+- Equipped helmets, armour, packs, and weapon silhouettes are visible on the raid sprite.
+- Added detailed animated rat, raccoon, crow, and hostile hound enemy sheets.
+- Added biome floor texture details, boss visual effects, and contextual NPC dialogue.
+
+## What changed in v0.31
+
+- Added a high-quality Shiba raider set with idle, run, fire, and hurt frames.
+- Normalized the frames to a shared 128px canvas and bottom-centre anchor.
+- Upgraded Shiba art is used on the raid map and main character displays.
+- Pistols, shotguns, rifles, SMGs, bows, and melee weapons have distinct ranges.
+- Enemy archetypes now have their own ranged profiles.
+- Combat can start across visible walkable tiles instead of requiring overlap.
+- Shorter-range fighters advance before attacking.
+- Weapon-coloured projectiles and impact flashes travel visibly across the map.
+
+The v0.31 runtime additions are:
+
+- `combat-v31.js`
+- `assets/sprites/shiba-v31/web/01.png`
+- `assets/sprites/shiba-v31/web/02.png`
+- `assets/sprites/shiba-v31/web/03.png`
+- `assets/sprites/shiba-v31/web/04.png`
+
+## What changed in v0.30
+
+- Replaced the crowded kennel grid with Pack, Workshop, Trade, and Tasks views.
+- Added Aurora, Sunset, Ocean, and Classic colour themes in Settings.
+- Redesigned equipped gear and inventory cards for clearer slots, rarity, and stat comparisons.
+- Consumables are now owned inventory items and are deducted when a raid begins.
+- Empty consumables cannot be selected.
+- Consumables can be found in medical, rare, and crate searches and are banked on extraction.
+- Added consumable stock to the hub trader.
+- Added a crafting bench with six resource-based consumable recipes.
+- Added responsive and reduced-motion handling for the new menus.
+
+## What changed in v0.29
+
+### Biome layouts, progression fixes, and a cleaner raid screen
+
+- City raids now use intersecting streets, blocks, alleys, and courtyards.
+- Sewer raids use looping channels, junctions, and maintenance rooms.
+- Factory raids use large connected halls, service lanes, and cross routes.
+- Farmland raids use branching tracks between fields, barns, orchards, and yards.
+- Every generated layout is connectivity-audited and keeps its terminal objective reachable.
+- Bosses now appear only on floors 3, 6, and 10.
+- Normal floors end at an extraction objective instead of spawning a boss.
+- The raid-end history crash caused by the missing `fmt` helper remains covered by regression testing.
+- The raid UI now gives the map more space, collapses secondary information, and uses a cleaner slate, teal, and amber palette.
+
+The v0.29 progression compatibility layer is isolated in:
+
+- `progression-v29.js`
+
+## What changed in v0.28
+
+### Natural procedural raid maps
+
+Raid geometry is now generated independently from the objective graph using recursive
+space partitioning:
+
+- irregular room sizes and placement
+- guaranteed connected corridors between partition branches
+- entrance and boss chambers placed far apart
+- objectives distributed throughout the generated chambers
+- biome-specific floor details, wall edging, scenery, and searchable caches
+- seeded layouts that remain reproducible for debugging
+- redesigned transparent dog and enemy illustrations with breed-specific silhouettes,
+  cleaner equipment, layered shading, and improved readability at map scale
+- rebalanced eight breed roles with bounded trade-offs and working specialist traits
+- fixed first-zone raid completion history crashing on a missing time formatter
+
+The city, sewer, factory, and farmland now have distinct environmental assets and
+surface treatments. The generator and artwork are original and do not reuse code or
+assets from the visual references used during planning.
+
+The v0.28 runtime is isolated in:
+
+- `world-v28.js`
+- `world-v28.css`
+
+## What changed in v0.27
+
+### Real top-down raid world
+
+The visible node graph has been replaced with a canvas-rendered tile world:
+
+- carved rooms and walkable corridors
+- solid wall and floor geometry
+- a following camera and fog of war
+- physical crates, resources, hazards, traders, and boss objectives
+- continuous autonomous dog movement across floor cells
+- searchable props that feed the existing loot and event systems
+- enemies that patrol, chase, and trigger combat by proximity
+
+The older dungeon graph remains internal for progression and guaranteed connectivity. Players now see and interact with the generated world rather than the graph.
+
+The v0.27 runtime is isolated in:
+
+- `world-v27.js`
+- `world-v27.css`
+
+## What changed in v0.26
+
+### Seeded procedural dungeons
+
+Each raid now creates a reproducible dungeon seed with:
+
+- a guaranteed entrance-to-boss critical path
+- optional side branches
+- occasional corridor loops
+- biome-aware room hazards
+- keys placed before optional locked rooms
+- 12 to 22 rooms based on biome and floor
+
+The generator validates every graph for connectivity, reciprocal links, boss access, and unsafe locks.
+
+For debugging in the browser console:
+
+```js
+generateDungeonFromSeed('my-test-seed')
+```
+
+### Better route finding
+
+Raiders now use breadth-first shortest-path routing across room links. This prevents movement from oscillating between nearby rooms when the visual nearest room is not the correct route.
+
+### Dungeon art pass
+
+Added:
+
+- unique city, sewer, factory, and farmland dungeon backdrops
+- clear gold critical routes and dotted side routes
+- dedicated key, lock, and hazard markers
+- improved entrance and boss room art
+- sharper SVG sprite rendering and more expressive movement
+
+See `ASSET-GUIDE.md` for the asset style and extension rules.
 
 ## What changed from v0.24
 

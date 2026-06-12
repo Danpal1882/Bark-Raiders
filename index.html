@@ -1,33 +1,480 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bark Raiders v0.27</title>
-  <style>
-    html, body { margin: 0; min-height: 100%; background: #120e0b; color: #fff4dc; font-family: system-ui, sans-serif; }
-    body { display: grid; place-items: center; }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bark Raiders v0.33</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='52' font-size='52'>🐾</text></svg>">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="world-v28.css" />
 </head>
 <body>
-  <p>Opening the kennel...</p>
-  <script>
-    fetch('game.html')
-      .then(response => {
-        if(!response.ok) throw new Error('Could not load Bark Raiders.');
-        return response.text();
-      })
-      .then(html => {
-        const runtime = '<script src="startup-compat.js"><\/script><script src="game-loader.js"><\/script>';
-        const styles = '<link rel="stylesheet" href="dungeon-v26.css"><link rel="stylesheet" href="world-v27.css">';
-        let patched = html.replace('</head>', styles + '</head>');
-        patched = patched.replace('<script src="game.js"><\/script>', runtime);
-        if(patched === html) throw new Error('Could not activate the Bark Raiders runtime.');
-        document.open();
-        document.write(patched);
-        document.close();
-      })
-      .catch(error => { document.body.textContent = error.message; });
-  </script>
+  <main class="app compact-app">
+    <header class="hero panel compact-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Idle scavenger survival prototype</p>
+        <h1>Bark Raiders</h1>
+        <p class="subtitle">Dungeon raids, roaming enemies, contracts, traders, gear, perks, and one very determined dog.</p>
+      </div>
+      <div class="hero-card compact-dog-card">
+        <img id="heroDogSprite" class="hero-sprite bounce" src="assets/shiba-raider.svg" alt="Main dog sprite" />
+        <div>
+          <strong id="dogName">Mochi</strong>
+          <p id="dogBreedText">Breed: Shiba Inu Raider</p>
+          <p id="gearSummary">Starter gear: Pistol + Scrap Vest</p>
+        </div>
+      </div>
+    </header>
+
+    <section id="offlinePanel" class="panel offline-panel hidden">
+      <div class="panel-title-row">
+        <h2>While You Were Away</h2>
+        <button id="claimOfflineBtn">Claim</button>
+      </div>
+      <p id="offlineText" class="muted"></p>
+    </section>
+
+    <nav class="top-tabs panel">
+      <button class="tab-btn active" data-tab="raid" onclick="switchTab('raid')">Raid</button>
+      <button class="tab-btn" data-tab="kennel" onclick="switchTab('kennel')">Kennel</button>
+      <button class="tab-btn" data-tab="market" onclick="switchTab('market')">Market</button>
+      <button class="tab-btn" data-tab="world" onclick="switchTab('world')">World</button>
+      <button class="tab-btn" data-tab="intel" onclick="switchTab('intel')">Intel</button>
+      <button class="tab-btn" data-tab="history" onclick="switchTab('history')">History</button>
+      <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">Settings</button>
+    </nav>
+
+    <section class="dashboard-grid tab-panel active" data-tab-panel="raid">
+      <aside class="panel setup-panel">
+        <div class="panel-title-row">
+          <h2>Raid Setup</h2>
+          <span id="raidTimer" class="pill">00:00</span>
+        </div>
+
+        <div class="compact-fields">
+          <div class="form-row">
+            <label for="zoneSelect">Biome</label>
+            <select id="zoneSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="floorSelect">Area Floor</label>
+            <select id="floorSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="planSelect">Plan</label>
+            <select id="planSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="dogSelect">Raider</label>
+            <select id="dogSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="contractSelect">Contract</label>
+            <select id="contractSelect"></select>
+          </div>
+          <div class="form-row">
+            <label for="profileSelect">Dispatch Profile</label>
+            <select id="profileSelect"></select>
+          </div>
+          <div class="mini-actions">
+            <button id="saveProfileBtn" class="ghost">Save Profile</button>
+            <button id="loadProfileBtn" class="ghost">Load Profile</button>
+            <button id="deleteProfileBtn" class="ghost">Delete</button>
+          </div>
+          <div class="form-row">
+            <label for="extractSelect">Auto-Extract</label>
+            <select id="extractSelect">
+              <option value="off">Off</option>
+              <option value="safe">Safe: HP below 45% or threat over 75%</option>
+              <option value="balanced">Balanced: HP below 35% or threat over 85%</option>
+              <option value="greedy">Greedy: HP below 25% or threat over 95%</option>
+              <option value="pack">Pack Full</option>
+              <option value="boss">After Boss Objective</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="controls compact-controls">
+          <button id="startBtn">Start</button>
+          <button id="returnBtn" disabled>Extract</button>
+          <button id="autoBtn" class="ghost">Auto-Raid: Off</button>
+          <button id="autoExtractBtn" class="ghost">Auto-Extract: Off</button>
+          <button id="resetBtn" class="ghost">Reset</button>
+        </div>
+
+        <details class="compact-details">
+          <summary>Consumables</summary>
+          <div id="consumableSetup" class="consumable-setup"></div>
+          <p class="muted tiny">Choose up to 2. Hover/focus for what each one does.</p>
+        </details>
+
+        <details class="compact-details">
+          <summary>Loot Filter</summary>
+          <div id="lootFilter" class="loot-filter"></div>
+        </details>
+
+        <div class="status-box compact-status">
+          <p><strong>Status:</strong> <span id="statusText">Resting at the kennel.</span></p>
+          <p><strong>Weather:</strong> <span id="weatherText">None</span></p>
+          <p><strong>Modifier:</strong> <span id="modifierText">None</span></p>
+          <p><strong>Threat:</strong> <span id="threatText">0%</span></p>
+        </div>
+
+        <div class="bars compact-bars">
+          <label>Health <span id="hpText"></span></label>
+          <div class="bar"><span id="hpBar"></span></div>
+          <label>Carry <span id="carryText"></span></label>
+          <div class="bar"><span id="carryBar" class="carry"></span></div>
+          <label>Ammo <span id="ammoText"></span></label>
+          <div class="bar"><span id="ammoBar" class="ammo"></span></div>
+          <label>XP <span id="xpText"></span></label>
+          <div class="bar"><span id="xpBar" class="xp"></span></div>
+        </div>
+        <div id="statGrid" class="stat-grid compact-stat-grid"></div>
+      </aside>
+
+      <section class="map-column">
+        <article class="panel map-panel dashboard-map-panel">
+          <div class="panel-title-row">
+            <h2>Raid Map</h2>
+            <span id="mapSummary" class="muted small">Explore the district and locate extraction.</span>
+          </div>
+          <div id="map" class="map"></div>
+          <div class="legend compact-legend">
+            <span><img src="assets/tile-crate.svg" alt=""> Loot</span>
+            <span><img src="assets/tile-tree.svg" alt=""> Trees</span>
+            <span><img src="assets/tile-scrap.svg" alt=""> Scrap</span>
+            <span><img src="assets/tile-medical.svg" alt=""> Meds</span>
+            <span><img src="assets/tile-trader.svg" alt=""> Trader</span>
+            <span><img src="assets/tile-boss.svg" alt=""> Boss</span>
+          </div>
+        </article>
+
+        <article id="choicePanel" class="panel choice-panel hidden">
+          <h2>Raid Prompt</h2>
+          <p id="choiceText" class="muted"></p>
+          <div id="choiceButtons" class="choice-buttons"></div>
+        </article>
+
+        <article class="panel combat-panel compact-combat">
+          <div class="panel-title-row">
+            <h2>Combat</h2>
+            <span id="combatState" class="pill muted-pill">Roaming</span>
+          </div>
+          <div class="combat-stage">
+            <div class="fighter-card ally">
+              <img id="combatDogSprite" class="combat-sprite bounce" src="assets/shiba-raider.svg" alt="Dog sprite" />
+              <strong id="combatDogName">Mochi</strong>
+              <span id="combatDogRole" class="muted small">Shiba Inu Raider</span>
+              <div class="bar mini"><span id="combatDogHpBar"></span></div>
+              <span id="combatDogHpText" class="muted small">38 / 38 HP</span>
+            </div>
+            <div class="versus">VS</div>
+            <div class="fighter-card enemy">
+              <img id="enemySprite" class="combat-sprite enemy-idle" src="assets/rat-bandit.svg" alt="Enemy sprite" />
+              <strong id="enemyName">No target</strong>
+              <span id="enemyType" class="muted small">Wandering the zone</span>
+              <div class="bar mini"><span id="enemyHpBar" class="enemy-bar"></span></div>
+              <span id="enemyHpText" class="muted small">--</span>
+            </div>
+          </div>
+          <p id="encounterText" class="encounter-text muted">No encounter active.</p>
+        </article>
+      </section>
+
+      <aside class="panel right-panel">
+        <h2>Field Intel</h2>
+
+        <details class="compact-details" open>
+          <summary>Active Contract</summary>
+          <div id="contractStatus" class="gear-grid"></div>
+        </details>
+
+        <details class="compact-details">
+          <summary>Auto-Raid Profile</summary>
+          <div id="profilePanel" class="gear-grid"></div>
+        </details>
+
+        <details class="compact-details">
+          <summary>Injuries & Area Progress</summary>
+          <div id="progressStatus" class="gear-grid"></div>
+        </details>
+
+        <details class="compact-details">
+          <summary>Current Raider</summary>
+          <div id="raiderStatus" class="gear-grid"></div>
+        </details>
+
+        <details class="compact-details" open>
+          <summary>Raid Loot</summary>
+          <div id="raidLootGrid" class="resources"></div>
+        </details>
+
+        <details class="compact-details">
+          <summary>Pack Manager</summary>
+          <p class="muted tiny">Drop unwanted stacks mid-raid.</p>
+          <div id="packManager" class="pack-manager"></div>
+        </details>
+
+        <details class="compact-details">
+          <summary>Kennel Stores</summary>
+          <div id="resources" class="resources"></div>
+        </details>
+
+        <details class="compact-details">
+          <summary>Gear & Equipment</summary>
+          <div id="gearGrid" class="gear-grid"></div>
+          <hr>
+          <div id="equipmentGrid" class="gear-grid"></div>
+          <div id="inventoryGrid" class="gear-grid"></div>
+        </details>
+
+        <details class="compact-details">
+          <summary>Raid Log</summary>
+          <div id="log" class="log"></div>
+        </details>
+      </aside>
+    </section>
+
+    <section class="kennel-screen tab-panel" data-tab-panel="kennel">
+      <div class="kennel-header panel">
+        <div>
+          <p class="eyebrow">Home base</p>
+          <h2>The Kennel</h2>
+          <p class="muted">Manage the pack, build supplies, and prepare the next run.</p>
+        </div>
+        <nav class="kennel-nav" aria-label="Kennel sections">
+          <button class="kennel-nav-btn active" data-kennel-view="pack" onclick="switchKennelView('pack')">Pack</button>
+          <button class="kennel-nav-btn" data-kennel-view="workshop" onclick="switchKennelView('workshop')">Workshop</button>
+          <button class="kennel-nav-btn" data-kennel-view="trade" onclick="switchKennelView('trade')">Trade</button>
+          <button class="kennel-nav-btn" data-kennel-view="tasks" onclick="switchKennelView('tasks')">Tasks</button>
+        </nav>
+      </div>
+
+      <div class="kennel-view active" data-kennel-panel="pack">
+        <section class="panel kennel-card kennel-roster-card">
+          <div class="panel-title-row">
+            <div><h2>Raiders</h2><span class="muted small">Your active pack and their condition.</span></div>
+            <button id="openCreatorBtn">Create Raider</button>
+          </div>
+          <div id="rosterPanel" class="upgrades"></div>
+          <div id="creatorPanel" class="creator-panel hidden"></div>
+        </section>
+        <section class="panel kennel-card">
+          <h2>Recovery</h2>
+          <div id="recoveryPanel" class="upgrades"></div>
+        </section>
+        <section class="panel kennel-card">
+          <h2>Base Overview</h2>
+          <div id="kennelBase" class="kennel-base"></div>
+        </section>
+      </div>
+
+      <div class="kennel-view" data-kennel-panel="workshop">
+        <section class="panel kennel-card kennel-wide-card">
+          <div class="panel-title-row"><div><h2>Crafting Bench</h2><span class="muted small">Turn raid materials into usable supplies.</span></div></div>
+          <div id="craftingGrid" class="crafting-grid"></div>
+        </section>
+        <section class="panel kennel-card">
+          <h2>Kennel Stations</h2>
+          <div id="upgrades" class="upgrades"></div>
+        </section>
+        <section class="panel kennel-card">
+          <h2>Research</h2>
+          <div id="researchGrid" class="upgrades"></div>
+        </section>
+        <section class="panel kennel-card">
+          <h2>Dog Treat Perks</h2>
+          <p class="muted tiny">Treats come from bosses, quests, and offline scavenging.</p>
+          <div id="perkGrid" class="upgrades"></div>
+        </section>
+      </div>
+
+      <div class="kennel-view" data-kennel-panel="trade">
+        <section class="panel kennel-card">
+          <h2>Hub Trader</h2>
+          <div id="hubTraderGrid" class="upgrades"></div>
+        </section>
+        <section class="panel kennel-card">
+          <h2>Scav Market</h2>
+          <div id="marketPanel" class="upgrades"></div>
+        </section>
+      </div>
+
+      <div class="kennel-view" data-kennel-panel="tasks">
+        <section class="panel kennel-card kennel-wide-card">
+          <h2>Noticeboard</h2>
+          <div id="questGrid" class="upgrades"></div>
+        </section>
+      </div>
+    </section>
+
+
+
+
+    <section class="tab-panel panel market-screen" data-tab-panel="market">
+      <div class="panel-title-row">
+        <h2>Scav Market</h2>
+        <span class="muted small">Named traders, faction reputation, and rotating deals.</span>
+      </div>
+      <div class="market-layout">
+        <aside class="market-sidebar">
+          <div id="traderList" class="trader-list"></div>
+        </aside>
+        <section class="market-main">
+          <div id="traderDetail" class="trader-detail"></div>
+          <div id="traderStock" class="upgrades"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="tab-panel panel world-panel" data-tab-panel="world">
+      <div class="panel-title-row">
+        <h2>World Map</h2>
+        <span class="muted small">Biome progression, mastery, and faction influence.</span>
+      </div>
+      <div id="worldMapPanel" class="world-map-grid"></div>
+    </section>
+
+    <section class="tab-panel panel intel-panel" data-tab-panel="intel">
+      <div class="panel-title-row">
+        <h2>Raid Intel</h2>
+        <span class="muted small">Boss, biome, and loadout information.</span>
+      </div>
+      <div id="bossIntel" class="intel-grid"></div>
+      <div id="bountyBoard" class="intel-grid"></div>
+      <div id="bossDialoguePanel" class="intel-grid"></div>
+      <div id="factionPanel" class="intel-grid"></div>
+      <div id="masteryPanel" class="intel-grid"></div>
+    </section>
+
+    <section class="tab-panel panel history-panel" data-tab-panel="history">
+      <div class="panel-title-row">
+        <h2>Raid History</h2>
+        <span class="muted small">Recent dispatches and best progress.</span>
+      </div>
+      <div id="raidHistory" class="history-list"></div>
+    </section>
+
+    <section class="tab-panel panel settings-panel" data-tab-panel="settings">
+      <div class="panel-title-row">
+        <h2>Settings & Save</h2>
+        <span class="muted small">Quality-of-life controls.</span>
+      </div>
+      <div class="settings-grid">
+        <label class="setting-row">
+          <span>Raid Speed</span>
+          <select id="speedSelect">
+            <option value="1500">Slow</option>
+            <option value="1000">Normal</option>
+            <option value="650">Fast</option>
+            <option value="350">Turbo</option>
+          </select>
+        </label>
+        <label class="setting-row">
+          <span>Log Detail</span>
+          <select id="logDetailSelect">
+            <option value="full">Full</option>
+            <option value="important">Important Only</option>
+          </select>
+        </label>
+        <label class="setting-row">
+          <span>Reduce Animations</span>
+          <input id="reduceMotionToggle" type="checkbox">
+        </label>
+        <label class="setting-row">
+          <span>Colour Theme</span>
+          <select id="themeSelect">
+            <option value="aurora">Aurora</option>
+            <option value="sunset">Sunset</option>
+            <option value="ocean">Ocean</option>
+            <option value="classic">Classic</option>
+          </select>
+        </label>
+      </div>
+      <div class="controls">
+        <button id="exportSaveBtn">Export Save</button>
+        <button id="importSaveBtn" class="ghost">Import Save</button>
+      </div>
+      <textarea id="saveBox" class="save-box" placeholder="Exported save appears here. Paste a save here and press Import Save."></textarea>
+    </section>
+
+    <section id="dispatchModal" class="modal hidden">
+      <div class="modal-card dispatch-card">
+        <div class="panel-title-row">
+          <h2>Pre-Dispatch Loadout</h2>
+          <button id="closeDispatchBtn" class="ghost">Close</button>
+        </div>
+        <div id="dispatchSummary" class="dispatch-summary"></div>
+        <div class="dispatch-actions">
+          <button id="confirmDispatchBtn">Dispatch Raider</button>
+          <button id="confirmAutoDispatchBtn" class="ghost">Enable Auto-Raid + Dispatch</button>
+        </div>
+      </div>
+    </section>
+
+
+    <section id="creatorModal" class="modal hidden">
+      <div class="modal-card creator-modal-card">
+        <div class="panel-title-row">
+          <div>
+            <h2 id="creatorModalTitle">Create Raider</h2>
+            <p id="creatorModalIntro" class="muted creator-modal-intro">Add another dog to your kennel roster.</p>
+          </div>
+          <button id="closeCreatorBtn" class="ghost">Close</button>
+        </div>
+        <div class="creator-modal-layout">
+          <div class="creator-preview">
+            <img id="creatorPreviewSprite" class="creator-preview-sprite" src="assets/shiba-raider.svg" alt="Raider preview">
+            <div>
+              <strong id="creatorPreviewName">New Raider</strong>
+              <p id="creatorPreviewBreed" class="muted">Shiba Inu · red</p>
+              <p id="creatorPreviewRole" class="muted">Balanced scavenger</p>
+            </div>
+          </div>
+          <div class="creator-form">
+            <label>Name<input id="modalRaiderName" maxlength="18" placeholder="Name your raider"></label>
+            <label>Breed<select id="modalRaiderBreed"></select></label>
+            <label>Coat Colour<select id="modalRaiderColor"></select></label>
+            <label>Collar Accent<select id="modalRaiderAccent">
+              <option value="#8bd77f">Green</option>
+              <option value="#ffd970">Gold</option>
+              <option value="#7bb7ff">Blue</option>
+              <option value="#ff8fb3">Pink</option>
+              <option value="#f38b57">Orange</option>
+            </select></label>
+          </div>
+        </div>
+        <div id="creatorStatPreview" class="creator-stat-preview"></div>
+        <p id="creatorValidation" class="creator-validation hidden" role="alert"></p>
+        <div class="dispatch-actions">
+          <button id="createRaiderModalBtn">Create Raider</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="summaryModal" class="modal hidden">
+      <div class="modal-card summary-card">
+        <div class="panel-title-row">
+          <h2>Post-Raid Report</h2>
+          <button id="closeSummaryBtn" class="ghost">Close</button>
+        </div>
+        <div id="raidSummary" class="dispatch-summary"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="startup-compat.js"></script>
+  <script src="game.js"></script>
+  <script src="progression-v29.js"></script>
+  <script src="balance-v28.js"></script>
+  <script src="systems-v30.js"></script>
+  <script src="world-v29.js"></script>
+  <script src="combat-v31.js"></script>
+  <script src="arsenal-v32.js"></script>
+  <script src="customisation-v32.js"></script>
+  <script src="immersion-v32.js"></script>
+  <script src="polish-v33.js"></script>
+  <script src="founder-onboarding.js"></script>
 </body>
 </html>

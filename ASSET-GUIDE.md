@@ -2,22 +2,37 @@
 
 ## Visual direction
 
-Bark Raiders uses compact illustrated SVG assets with dark ink outlines, warm scavenger-survival colours, simple readable shapes, and restrained highlights.
+Bark Raiders uses compact illustrated SVG assets with:
 
-SVG remains the default because it stays sharp at every UI size, loads quickly, and can be recoloured for custom raiders.
+- dark ink outlines
+- warm scavenger-survival colours
+- simple shapes that remain readable between 24 and 160 pixels
+- one strong silhouette per character or room marker
+- restrained highlights rather than detailed texture
 
-## Names and sizes
+SVG remains the default because it is sharp at every UI size, inexpensive to load, and easy to recolour for custom raiders.
 
-- `*-raider.svg`: playable dogs, `160 x 160` viewBox
-- `*-bandit.svg`: standard enemies, `160 x 160` viewBox
-- `*-boss.svg`: boss characters, `160 x 160` viewBox
-- `tile-*.svg`: room markers, `64 x 64` viewBox
-- `biome-*.svg`: biome badges, `64 x 64` viewBox
-- `dungeon-*.svg`: map backdrops, `900 x 620` viewBox
+## Folders and names
 
-Keep characters bottom-centred, leave transparent silhouette padding, and avoid text inside game art.
+Keep shipped assets in `assets/`.
 
-## Shared palette
+- `*-raider.svg`: playable dog base art
+- `*-bandit.svg`: standard enemies
+- `*-boss.svg`: boss characters
+- `tile-*.svg`: room and map markers
+- `biome-*.svg`: small biome badges
+- `dungeon-*.svg`: large decorative map backdrops
+
+## Canvas rules
+
+- Character art: `viewBox="0 0 160 160"`
+- Tile markers: `viewBox="0 0 64 64"`
+- Dungeon backdrops: `viewBox="0 0 900 620"`
+- Keep characters bottom-centred.
+- Leave at least 6% transparent padding around silhouettes.
+- Avoid text inside game assets.
+
+## Palette
 
 - Ink: `#1b1410`
 - Cream: `#fff4dc`
@@ -28,24 +43,24 @@ Keep characters bottom-centred, leave transparent silhouette padding, and avoid 
 - Blue: `#62b4ff`
 - Purple: `#b98cff`
 
-Biome art can shift supporting colours while retaining the shared ink, cream, and gold accents.
+Biome art can shift the supporting palette while retaining the shared ink, cream, and gold accents.
 
 ## Animation
 
-Characters use pose-aware SVG generation and CSS motion:
+Current characters use pose-aware SVG generation and CSS motion. Keep motion readable:
 
-- idle: subtle vertical movement
-- run: forward lean and faster timing
-- combat: recoil or anticipation
+- idle: 2 to 5 pixel vertical movement
+- run: forward lean with faster timing
+- combat: small recoil or anticipation movement
 - boss: slower pulse with greater visual weight
 
 Respect `prefers-reduced-motion` for nonessential animation.
 
 ## Adding a biome
 
-1. Add its biome definition and room-name pool.
+1. Add the biome definition and room-name pool in `game.js`.
 2. Add `assets/biome-<id>.svg`.
 3. Add `assets/dungeon-<id>.svg`.
-4. Register the asset keys.
-5. Add its CSS background treatment.
+4. Add the asset keys to `TILE_ART` and `DUNGEON_ART`.
+5. Add a matching `.biome-<id>` background treatment in `style.css`.
 6. Run seeded graph tests and desktop/mobile browser playtests.
