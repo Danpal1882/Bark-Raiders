@@ -7,11 +7,11 @@
     farmland:['#3d4028','#33351f','#202613','#626a37'],
   };
   const art={
-    base:'assets/sprites/v34/loot/02-06.png',crate:'assets/sprites/v34/loot/01-01.png',tree:'assets/tile-tree.svg',
+    base:'assets/sprites/v34/loot/03-06.png',crate:'assets/sprites/v34/loot/01-01.png',tree:'assets/tile-tree.svg',
     grove:'assets/tile-grove.svg',food:'assets/sprites/v34/loot/01-04.png',water:'assets/sprites/v34/loot/01-05.png',
     scrap:'assets/sprites/v34/loot/01-06.png',medical:'assets/sprites/v34/loot/01-03.png',weapon:'assets/sprites/v34/loot/02-01.png',
     event:'assets/tile-event.svg',exit:'assets/tile-event.svg',trader:'assets/tile-trader.svg',
-    enemy:'assets/tile-enemy.svg',rare:'assets/sprites/v34/loot/02-03.png',boss:'assets/sprites/v34/loot/02-06.png',
+    enemy:'assets/tile-enemy.svg',rare:'assets/sprites/v34/loot/02-03.png',boss:'assets/sprites/v34/loot/02-03.png',
   };
   const cache=new Map();
   let frame=0,last=performance.now(),baseGenerate=generateMap,baseMove=moveDog;
