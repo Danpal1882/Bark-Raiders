@@ -1,34 +1,307 @@
 (function(){
-  const ART={city:'assets/dungeon-city.svg',sewer:'assets/dungeon-sewer.svg',factory:'assets/dungeon-factory.svg',farmland:'assets/dungeon-farmland.svg',key:'assets/tile-key.svg',lock:'assets/tile-lock.svg',hazard:'assets/tile-hazard.svg'};
-  function seedHash(value){let hash=2166136261;for(const char of String(value)){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619);}return hash>>>0;}
-  function randomFromSeed(seed){let value=seedHash(seed);return function(){value+=0x6D2B79F5;let t=value;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
-  function randomItem(list,rng){return list[Math.floor(rng()*list.length)];}
-  function weightedItem(list,rng){const total=list.reduce((sum,item)=>sum+item.weight,0);let roll=rng()*total;for(const item of list){roll-=item.weight;if(roll<=0)return item;}return list[0];}
-  function roomType(biome,rng){const entries=biome.types.map(type=>{let weight=biome.bias[type]||1;const plan=currentPlan();if(plan.focus==='wood'&&['tree','grove'].includes(type))weight+=10;if(plan.focus==='scrap'&&['scrap','weapon'].includes(type))weight+=10;if(plan.focus==='medical'&&type==='medical')weight+=10;if(plan.focus==='boss'&&type==='enemy')weight+=6;if(state.modifier?.forestBoost&&['tree','grove'].includes(type))weight+=6;if(state.modifier?.enemyBoost&&type==='enemy')weight+=6;return{type,weight};});return weightedItem(entries,rng).type;}
-  function validate(rooms,entranceId=0,bossId=rooms.length-1){const visited=new Set();const queue=[entranceId];while(queue.length){const id=queue.shift();if(visited.has(id)||!rooms[id])continue;visited.add(id);rooms[id].links.forEach(next=>{if(!visited.has(next))queue.push(next);});}const brokenLinks=rooms.flatMap(room=>room.links.filter(id=>!rooms[id]||!rooms[id].links.includes(room.id)).map(id=>`${room.id}->${id}`));const unsafeLocks=rooms.filter(room=>room.locked&&(room.critical||room.depth<=1));return{valid:visited.size===rooms.length&&visited.has(bossId)&&!brokenLinks.length&&!unsafeLocks.length,reachable:visited.size,total:rooms.length,bossReachable:visited.has(bossId),brokenLinks,unsafeLocks:unsafeLocks.map(room=>room.id)};}
+  const ART={
+    city:'assets/dungeon-city.svg',
+    sewer:'assets/dungeon-sewer.svg',
+    factory:'assets/dungeon-factory.svg',
+    farmland:'assets/dungeon-farmland.svg',
+    key:'assets/tile-key.svg',
+    lock:'assets/tile-lock.svg',
+    hazard:'assets/tile-hazard.svg',
+  };
+
+  function seedHash(value){
+    let hash=2166136261;
+    for(const char of String(value)){
+      hash^=char.charCodeAt(0);
+      hash=Math.imul(hash,16777619);
+    }
+    return hash>>>0;
+  }
+
+  function randomFromSeed(seed){
+    let value=seedHash(seed);
+    return function(){
+      value+=0x6D2B79F5;
+      let t=value;
+      t=Math.imul(t^(t>>>15),t|1);
+      t^=t+Math.imul(t^(t>>>7),t|61);
+      return ((t^(t>>>14))>>>0)/4294967296;
+    };
+  }
+
+  function randomItem(list,rng){ return list[Math.floor(rng()*list.length)]; }
+
+  function weightedItem(list,rng){
+    const total=list.reduce((sum,item)=>sum+item.weight,0);
+    let roll=rng()*total;
+    for(const item of list){ roll-=item.weight; if(roll<=0) return item; }
+    return list[0];
+  }
+
+  function roomType(biome,rng){
+    const entries=biome.types.map(type=>{
+      let weight=biome.bias[type] || 1;
+      const plan=currentPlan();
+      if(plan.focus==='wood' && ['tree','grove'].includes(type)) weight+=10;
+      if(plan.focus==='scrap' && ['scrap','weapon'].includes(type)) weight+=10;
+      if(plan.focus==='medical' && type==='medical') weight+=10;
+      if(plan.focus==='boss' && type==='enemy') weight+=6;
+      if(state.modifier?.forestBoost && ['tree','grove'].includes(type)) weight+=6;
+      if(state.modifier?.enemyBoost && type==='enemy') weight+=6;
+      return {type,weight};
+    });
+    return weightedItem(entries,rng).type;
+  }
+
+  function validate(rooms,entranceId=0,bossId=rooms.length-1){
+    const visited=new Set();
+    const queue=[entranceId];
+    while(queue.length){
+      const id=queue.shift();
+      if(visited.has(id) || !rooms[id]) continue;
+      visited.add(id);
+      rooms[id].links.forEach(next=>{ if(!visited.has(next)) queue.push(next); });
+    }
+    const brokenLinks=rooms.flatMap(room=>room.links
+      .filter(id=>!rooms[id] || !rooms[id].links.includes(room.id))
+      .map(id=>`${room.id}->${id}`));
+    const unsafeLocks=rooms.filter(room=>room.locked && (room.critical || room.depth<=1));
+    return {
+      valid:visited.size===rooms.length && visited.has(bossId) && !brokenLinks.length && !unsafeLocks.length,
+      reachable:visited.size,
+      total:rooms.length,
+      bossReachable:visited.has(bossId),
+      brokenLinks,
+      unsafeLocks:unsafeLocks.map(room=>room.id),
+    };
+  }
+
   function carve(seed){
-    const biome=currentBiome(),rng=randomFromSeed(seed),cols=13,rows=9,floor=currentFloor();
+    const biome=currentBiome();
+    const rng=randomFromSeed(seed);
+    const cols=13;
+    const rows=9;
+    const floor=currentFloor();
     const roomTarget=Math.min(22,12+state.zoneId*2+Math.floor((floor-1)/2)+Math.floor(rng()*3));
-    const rooms=[],occupied=new Map(),key=biomeKey();
-    function addRoom(gridX,gridY,options={}){const cell=`${gridX},${gridY}`;if(occupied.has(cell))return occupied.get(cell);const id=rooms.length;const room={id,x:id,y:0,gridX,gridY,w:options.w||(rng()<.28?2:1),h:options.h||(rng()<.22?2:1),left:6+((gridX+.5)/cols)*88,top:8+((gridY+.5)/rows)*84,widthPct:options.widthPct||(rng()<.25?10:7),heightPct:options.heightPct||(rng()<.2?10:7),type:options.type||roomType(biome,rng),roomName:options.roomName||randomItem(biome.rooms,rng),biomeKey:key,seen:false,cleared:false,links:[],locked:false,keyRoom:false,hazard:null,critical:!!options.critical,depth:options.depth||0,branch:options.branch??null,role:options.role||'side'};rooms.push(room);occupied.set(cell,room);return room;}
-    const critical=[];let y=4;
-    for(let depth=0;depth<7;depth++){if(depth>0&&depth<6)y=clamp(y+(rng()<.33?-1:rng()>.67?1:0),1,7);const room=addRoom(depth*2,y,{critical:true,depth,role:depth===0?'entrance':depth===6?'boss':'route',widthPct:depth===0||depth===6?9:7,heightPct:depth===0||depth===6?9:7});critical.push(room);if(depth)connectNodes(critical[depth-1],room);}
-    let attempts=0;while(rooms.length<roomTarget&&attempts<240){attempts++;const parent=randomItem(rooms.filter(room=>room.role!=='boss'),rng);const offsets=rng()<.62?[[0,-1],[0,1],[-1,0],[1,0]]:[[-1,-1],[1,-1],[-1,1],[1,1]];const[dx,dy]=randomItem(offsets,rng);const x=clamp(parent.gridX+dx,0,cols-1),nextY=clamp(parent.gridY+dy,0,rows-1);if(occupied.has(`${x},${nextY}`))continue;const room=addRoom(x,nextY,{depth:parent.depth+1,branch:parent.branch??parent.id,role:'side'});connectNodes(parent,room);}
-    rooms.forEach(room=>{const candidates=rooms.filter(other=>other.id!==room.id&&!room.links.includes(other.id)&&Math.abs(room.gridX-other.gridX)+Math.abs(room.gridY-other.gridY)<=2);if(candidates.length&&rng()<.28)connectNodes(room,randomItem(candidates,rng));});
-    const hazardSets={sewer:['flooded','dark','infested'],factory:['collapsing','dark','infested'],farmland:['overgrown','infested','flooded'],city:['dark','collapsing','infested']};
-    rooms.filter(room=>room.role==='side').forEach(room=>{if(rng()<.38)room.hazard=randomItem(hazardSets[key],rng);});
-    const lockCandidates=rooms.filter(room=>room.role==='side'&&room.depth>=2);if(lockCandidates.length>=2&&rng()<.72){const locked=randomItem(lockCandidates,rng);locked.locked=true;locked.hazard='locked';const keyCandidates=rooms.filter(room=>!room.locked&&room.role!=='boss'&&room.depth<locked.depth);const keyRoom=randomItem(keyCandidates.length?keyCandidates:[critical[1]],rng);keyRoom.keyRoom=true;keyRoom.roomName='Key Cache';keyRoom.type='crate';}
+    const rooms=[];
+    const occupied=new Map();
+    const key=biomeKey();
+
+    function addRoom(gridX,gridY,options={}){
+      const cell=`${gridX},${gridY}`;
+      if(occupied.has(cell)) return occupied.get(cell);
+      const id=rooms.length;
+      const room={
+        id,
+        x:id,
+        y:0,
+        gridX,
+        gridY,
+        w:options.w || (rng()<.28?2:1),
+        h:options.h || (rng()<.22?2:1),
+        left:6+((gridX+.5)/cols)*88,
+        top:8+((gridY+.5)/rows)*84,
+        widthPct:options.widthPct || (rng()<.25?10:7),
+        heightPct:options.heightPct || (rng()<.2?10:7),
+        type:options.type || roomType(biome,rng),
+        roomName:options.roomName || randomItem(biome.rooms,rng),
+        biomeKey:key,
+        seen:false,
+        cleared:false,
+        links:[],
+        locked:false,
+        keyRoom:false,
+        hazard:null,
+        critical:!!options.critical,
+        depth:options.depth || 0,
+        branch:options.branch ?? null,
+        role:options.role || 'side',
+      };
+      rooms.push(room);
+      occupied.set(cell,room);
+      return room;
+    }
+
+    const critical=[];
+    let y=4;
+    for(let depth=0;depth<7;depth++){
+      if(depth>0 && depth<6) y=clamp(y+(rng()<.33?-1:rng()>.67?1:0),1,7);
+      const room=addRoom(depth*2,y,{
+        critical:true,
+        depth,
+        role:depth===0?'entrance':depth===6?'boss':'route',
+        widthPct:depth===0||depth===6?9:7,
+        heightPct:depth===0||depth===6?9:7,
+      });
+      critical.push(room);
+      if(depth) connectNodes(critical[depth-1],room);
+    }
+
+    let attempts=0;
+    while(rooms.length<roomTarget && attempts<240){
+      attempts++;
+      const parent=randomItem(rooms.filter(room=>room.role!=='boss'),rng);
+      const offsets=rng()<.62
+        ? [[0,-1],[0,1],[-1,0],[1,0]]
+        : [[-1,-1],[1,-1],[-1,1],[1,1]];
+      const [dx,dy]=randomItem(offsets,rng);
+      const x=clamp(parent.gridX+dx,0,cols-1);
+      const nextY=clamp(parent.gridY+dy,0,rows-1);
+      if(occupied.has(`${x},${nextY}`)) continue;
+      const room=addRoom(x,nextY,{depth:parent.depth+1,branch:parent.branch??parent.id,role:'side'});
+      connectNodes(parent,room);
+    }
+
+    rooms.forEach(room=>{
+      const candidates=rooms.filter(other=>
+        other.id!==room.id &&
+        !room.links.includes(other.id) &&
+        Math.abs(room.gridX-other.gridX)+Math.abs(room.gridY-other.gridY)<=2
+      );
+      if(candidates.length && rng()<.28) connectNodes(room,randomItem(candidates,rng));
+    });
+
+    const hazardSets={
+      sewer:['flooded','dark','infested'],
+      factory:['collapsing','dark','infested'],
+      farmland:['overgrown','infested','flooded'],
+      city:['dark','collapsing','infested'],
+    };
+    rooms.filter(room=>room.role==='side').forEach(room=>{
+      if(rng()<.38) room.hazard=randomItem(hazardSets[key],rng);
+    });
+
+    const lockCandidates=rooms.filter(room=>room.role==='side' && room.depth>=2);
+    if(lockCandidates.length>=2 && rng()<.72){
+      const locked=randomItem(lockCandidates,rng);
+      locked.locked=true;
+      locked.hazard='locked';
+      const keyCandidates=rooms.filter(room=>!room.locked && room.role!=='boss' && room.depth<locked.depth);
+      const keyRoom=randomItem(keyCandidates.length?keyCandidates:[critical[1]],rng);
+      keyRoom.keyRoom=true;
+      keyRoom.roomName='Key Cache';
+      keyRoom.type='crate';
+    }
     return rooms;
   }
+
   carveDungeonRooms=carve;
   generateMap=function(seedOverride){
-    const zone=currentZone(),biome=currentBiome(),plan=currentPlan();state.dungeonSequence=(state.dungeonSequence||0)+1;state.mapSeed=String(seedOverride||`${biomeKey()}-f${currentFloor()}-${state.planId}-${Date.now()}-${state.dungeonSequence}`);state.currentBoss=chooseDungeonBoss();state.map=[];state.mapSize=zone.mapSize;state.revealedTiles=0;state.map=carve(state.mapSeed);
-    const entrance=state.map.find(room=>room.role==='entrance')||state.map[0],boss=state.map.find(room=>room.role==='boss')||state.map[state.map.length-1];entrance.type='base';entrance.roomName='Kennel Entrance';entrance.seen=true;entrance.cleared=true;entrance.locked=false;entrance.hazard=null;boss.type='boss';boss.roomName=`${state.currentBoss.name}'s Den`;boss.seen=!!state.research.bossMap;boss.cleared=false;boss.locked=false;if(boss.hazard==='locked')boss.hazard=null;
-    state.map.forEach(room=>{if(room.type==='base'||room.type==='boss')return;const flavour=randomFromSeed(`${state.mapSeed}-flavour-${room.id}`);if(plan.focus==='wood'&&flavour()<.35)room.type=flavour()<.6?'tree':'grove';if(plan.focus==='scrap'&&flavour()<.35)room.type=flavour()<.6?'scrap':'weapon';if(plan.focus==='medical'&&flavour()<.35)room.type='medical';if(plan.focus==='boss'&&flavour()<.22)room.type='enemy';});
-    state.mapValidation=validate(state.map,entrance.id,boss.id);state.position={x:entrance.x,y:entrance.y};revealAround(entrance.x,entrance.y,state.dog.scoutRange);state.encounterText=`${biome.icon} Entered ${biome.name}: ${biome.desc}`;
+    const zone=currentZone();
+    const biome=currentBiome();
+    const plan=currentPlan();
+    state.dungeonSequence=(state.dungeonSequence||0)+1;
+    state.mapSeed=String(seedOverride || `${biomeKey()}-f${currentFloor()}-${state.planId}-${Date.now()}-${state.dungeonSequence}`);
+    state.currentBoss=chooseDungeonBoss();
+    state.map=[];
+    state.mapSize=zone.mapSize;
+    state.revealedTiles=0;
+    state.map=carve(state.mapSeed);
+
+    const entrance=state.map.find(room=>room.role==='entrance') || state.map[0];
+    const boss=state.map.find(room=>room.role==='boss') || state.map[state.map.length-1];
+    entrance.type='base';
+    entrance.roomName='Kennel Entrance';
+    entrance.seen=true;
+    entrance.cleared=true;
+    entrance.locked=false;
+    entrance.hazard=null;
+    boss.type='boss';
+    boss.roomName=`${state.currentBoss.name}'s Den`;
+    boss.seen=!!state.research.bossMap;
+    boss.cleared=false;
+    boss.locked=false;
+    if(boss.hazard==='locked') boss.hazard=null;
+
+    state.map.forEach(room=>{
+      if(room.type==='base' || room.type==='boss') return;
+      const flavour=randomFromSeed(`${state.mapSeed}-flavour-${room.id}`);
+      if(plan.focus==='wood' && flavour()<.35) room.type=flavour()<.6?'tree':'grove';
+      if(plan.focus==='scrap' && flavour()<.35) room.type=flavour()<.6?'scrap':'weapon';
+      if(plan.focus==='medical' && flavour()<.35) room.type='medical';
+      if(plan.focus==='boss' && flavour()<.22) room.type='enemy';
+    });
+
+    state.mapValidation=validate(state.map,entrance.id,boss.id);
+    state.position={x:entrance.x,y:entrance.y};
+    revealAround(entrance.x,entrance.y,state.dog.scoutRange);
+    state.encounterText=`${biome.icon} Entered ${biome.name}: ${biome.desc}`;
   };
-  stepToward=function(target){const current=getTile(state.position.x,state.position.y);if(current?.links?.length){const queue=[current.id],previous=new Map([[current.id,null]]);while(queue.length){const id=queue.shift();if(id===target.id)break;(state.map[id]?.links||[]).forEach(next=>{if(!previous.has(next)){previous.set(next,id);queue.push(next);}});}if(previous.has(target.id)){let step=target.id;while(previous.get(step)!==current.id&&previous.get(step)!==null)step=previous.get(step);return state.map[step]||current;}}return current;};
+
+  stepToward=function(target){
+    const current=getTile(state.position.x,state.position.y);
+    if(current?.links?.length){
+      const queue=[current.id];
+      const previous=new Map([[current.id,null]]);
+      while(queue.length){
+        const id=queue.shift();
+        if(id===target.id) break;
+        (state.map[id]?.links || []).forEach(next=>{
+          if(!previous.has(next)){
+            previous.set(next,id);
+            queue.push(next);
+          }
+        });
+      }
+      if(previous.has(target.id)){
+        let step=target.id;
+        while(previous.get(step)!==current.id && previous.get(step)!==null) step=previous.get(step);
+        return state.map[step] || current;
+      }
+    }
+    return current;
+  };
+
   const baseRenderMap=renderMap;
-  renderMap=function(){baseRenderMap();const map=$('map'),key=biomeKey();map.querySelector('.dungeon-decor')?.remove();map.insertAdjacentHTML('afterbegin',`<img class="dungeon-decor" src="${ART[key]}" alt="" aria-hidden="true">`);map.querySelector('.dungeon-meta')?.remove();const seedLabel=(state.mapSeed||'new-route').split('-').slice(-2).join('-').toUpperCase();map.insertAdjacentHTML('beforeend',`<div class="dungeon-meta"><span>Route ${seedLabel}</span><span>${state.map.length} rooms</span><span>${state.mapValidation?.valid?'Connected':'Route warning'}</span></div>`);[...map.querySelectorAll('.poi')].forEach((element,index)=>{const room=state.map[index];if(!room)return;element.classList.add(room.critical?'critical-room':'side-room');const marker=room.keyRoom?ART.key:room.locked?ART.lock:room.hazard?ART.hazard:null;const tag=element.querySelector('.room-tag');if(tag&&marker)tag.innerHTML=`<img src="${marker}" alt="">`;});const pathKinds=[];state.map.forEach(room=>{if(!room.seen)return;room.links.forEach(id=>{const other=state.map[id];if(!other||!other.seen||room.id>other.id)return;pathKinds.push({critical:room.critical&&other.critical,locked:room.locked||other.locked});});});[...map.querySelectorAll('.path-line')].forEach((line,index)=>{const kind=pathKinds[index];if(!kind)return;line.classList.add(kind.critical?'critical-path':'branch-path');if(kind.locked)line.classList.add('locked-path');});};
-  window.generateDungeonFromSeed=function(seed){generateMap(seed);render();return{seed:state.mapSeed,rooms:state.map,mapValidation:state.mapValidation};};window.validateDungeonGraph=validate;state.mapSeed=state.mapSeed||'';state.mapValidation=state.mapValidation||null;state.dungeonSequence=state.dungeonSequence||0;generateMap();render();
+  renderMap=function(){
+    baseRenderMap();
+    const map=$('map');
+    const key=biomeKey();
+    map.querySelector('.dungeon-decor')?.remove();
+    map.insertAdjacentHTML('afterbegin',`<img class="dungeon-decor" src="${ART[key]}" alt="" aria-hidden="true">`);
+    map.querySelector('.dungeon-meta')?.remove();
+    const seedLabel=(state.mapSeed || 'new-route').split('-').slice(-2).join('-').toUpperCase();
+    map.insertAdjacentHTML('beforeend',`<div class="dungeon-meta"><span>Route ${seedLabel}</span><span>${state.map.length} rooms</span><span>${state.mapValidation?.valid?'Connected':'Route warning'}</span></div>`);
+
+    [...map.querySelectorAll('.poi')].forEach((element,index)=>{
+      const room=state.map[index];
+      if(!room) return;
+      element.classList.add(room.critical?'critical-room':'side-room');
+      const marker=room.keyRoom?ART.key:room.locked?ART.lock:room.hazard?ART.hazard:null;
+      const tag=element.querySelector('.room-tag');
+      if(tag && marker) tag.innerHTML=`<img src="${marker}" alt="">`;
+    });
+
+    const pathKinds=[];
+    state.map.forEach(room=>{
+      if(!room.seen) return;
+      room.links.forEach(id=>{
+        const other=state.map[id];
+        if(!other || !other.seen || room.id>other.id) return;
+        pathKinds.push({
+          critical:room.critical && other.critical,
+          locked:room.locked || other.locked,
+        });
+      });
+    });
+    [...map.querySelectorAll('.path-line')].forEach((line,index)=>{
+      const kind=pathKinds[index];
+      if(!kind) return;
+      line.classList.add(kind.critical?'critical-path':'branch-path');
+      if(kind.locked) line.classList.add('locked-path');
+    });
+  };
+
+  window.generateDungeonFromSeed=function(seed){
+    generateMap(seed);
+    render();
+    return {seed:state.mapSeed,rooms:state.map,mapValidation:state.mapValidation};
+  };
+  window.validateDungeonGraph=validate;
+
+  state.mapSeed=state.mapSeed || '';
+  state.mapValidation=state.mapValidation || null;
+  state.dungeonSequence=state.dungeonSequence || 0;
+  generateMap();
+  render();
 })();

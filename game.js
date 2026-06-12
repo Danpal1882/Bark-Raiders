@@ -23,12 +23,22 @@ const TILE_ART = {
   boss:'assets/tile-boss.svg', cleared:'assets/tile-cleared.svg', empty:'assets/tile-empty.svg',
 };
 
+const DUNGEON_ART = {
+  city:'assets/dungeon-city.svg',
+  sewer:'assets/dungeon-sewer.svg',
+  factory:'assets/dungeon-factory.svg',
+  farmland:'assets/dungeon-farmland.svg',
+  key:'assets/tile-key.svg',
+  lock:'assets/tile-lock.svg',
+  hazard:'assets/tile-hazard.svg',
+};
+
 const DOGS = {
-  shiba: { name:'Mochi', breed:'Shiba Inu Raider', unlock:'Starter', sprite:SPRITES.shiba, desc:'Balanced scout. Good crit and reliable combat.', hp:0, attack:1, defence:0, crit:5, speed:0, carry:0, scout:0, rare:0, extract:0 },
-  pom: { name:'Pip', breed:'Pomeranian Chaos Raider', unlock:'Find/equip any non-starter gear', sprite:SPRITES.pom, desc:'Tiny chaos looter. Better rare finds and dodge, but fragile.', hp:-8, attack:0, defence:-1, crit:8, speed:1, carry:-4, scout:0, rare:8, extract:4 },
-  jack: { name:'Rustle', breed:'Jack Russell Scrapper', unlock:'Beat the first boss / unlock zone 2', sprite:SPRITES.jack, desc:'Fast, brave, slightly chaotic. Great at chasing enemies and boss pushes.', hp:4, attack:2, defence:1, crit:5, speed:1, carry:0, scout:0, rare:2, extract:2 },
-  collie: { name:'Scout', breed:'Border Collie Pathfinder', unlock:'Upgrade Watch Tower to Lv.3', sprite:SPRITES.collie, desc:'Fast route-finder. Better scouting and extraction.', hp:-2, attack:0, defence:0, crit:0, speed:1, carry:0, scout:1, rare:0, extract:8 },
-  dachshund: { name:'Noodle', breed:'Dachshund Sneak', unlock:'Reach Ruined City Floor 3 or research Dog Whistle', sprite:SPRITES.dachshund, desc:'Sneaky scavenger. Lower threat and better extraction.', hp:-4, attack:-1, defence:0, crit:4, speed:0, carry:2, scout:0, rare:3, extract:12 },
+  shiba: { name:'Mochi', breed:'Shiba Inu Raider', unlock:'Starter', sprite:SPRITES.shiba, desc:'Balanced scavenger with dependable bonuses everywhere.', hp:4, attack:1, defence:1, crit:3, speed:0, carry:2, scout:0, rare:0, extract:2 },
+  pom: { name:'Pip', breed:'Pomeranian Chaos Raider', unlock:'Find/equip any non-starter gear', sprite:SPRITES.pom, desc:'Lucky skirmisher with crit, speed, and rare-loot bonuses.', hp:-2, attack:0, defence:0, crit:5, speed:1, carry:0, scout:0, rare:7, extract:2 },
+  jack: { name:'Rustle', breed:'Jack Russell Scrapper', unlock:'Beat the first boss / unlock zone 2', sprite:SPRITES.jack, desc:'Aggressive scrapper with higher damage, crit, and speed.', hp:0, attack:2, defence:0, crit:6, speed:1, carry:0, scout:0, rare:0, extract:0 },
+  collie: { name:'Scout', breed:'Border Collie Pathfinder', unlock:'Upgrade Watch Tower to Lv.3', sprite:SPRITES.collie, desc:'Pathfinder with better scouting, movement, carry, and extraction.', hp:2, attack:0, defence:0, crit:2, speed:1, carry:2, scout:1, rare:0, extract:6 },
+  dachshund: { name:'Noodle', breed:'Dachshund Cache Specialist', unlock:'Reach Ruined City Floor 3 or research Dog Whistle', sprite:SPRITES.dachshund, desc:'Cache specialist with extra carry, rare finds, and extraction.', hp:0, attack:0, defence:1, crit:2, speed:0, carry:4, scout:0, rare:4, extract:6 },
 };
 
 const RAID_PLANS = {
@@ -291,7 +301,7 @@ const GEAR_POOLS = {
 const state = {
   running:false, mode:'idle', seconds:0, ticker:null, autoRaid:false, autoExtract:false, autoExtractRule:'off', offlineReward:null, settings:{speed:1000, logDetail:'full', reduceMotion:false}, raidHistory:[], lastRaidSummary:null,
   zoneId:0, unlockedZones:1, planId:'balanced', dogId:'shiba', contractId:'none', selectedConsumables:[], activeConsumables:[], consumableUsed:{}, contractProgress:{}, contractRewardClaimed:false, lootFilter:{}, weather:null, modifier:null, threat:0,
-  map:[], roamEnemies:[], mapSize:12, position:{x:0,y:0}, revealedTiles:0, combat:null, currentBoss:null, dungeonKeys:0, pendingChoice:null, activeEventTile:null,
+  map:[], mapSeed:'', mapValidation:null, dungeonSequence:0, roamEnemies:[], mapSize:12, position:{x:0,y:0}, revealedTiles:0, combat:null, currentBoss:null, dungeonKeys:0, pendingChoice:null, activeEventTile:null,
   dog:{
     name:'Mochi', breed:'Shiba Inu Raider', sprite:SPRITES.shiba, level:1, xp:0, xpNext:40,
     maxHpBase:38, hp:38, attackBase:8, defenceBase:2, critBase:6, speedBase:1, carryMaxBase:22,
@@ -330,6 +340,10 @@ function emptyRes(){ return Object.fromEntries(RESOURCES.map(r=>[r,0])); }
 function rand(max){ return Math.floor(Math.random()*max); }
 function pick(list){ return list[rand(list.length)]; }
 function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function fmt(seconds){
+  const total=Math.max(0,Math.floor(Number(seconds)||0));
+  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+}
 function currentZone(){ return ZONES[state.zoneId]; }
 function currentPlan(){ return RAID_PLANS[state.planId] || RAID_PLANS.balanced; }
 function currentDogDef(){ return DOGS[state.dogId] || DOGS.shiba; }
@@ -409,6 +423,36 @@ function weightedPick(list){
   const total=list.reduce((s,i)=>s+i.weight,0);
   let r=Math.random()*total;
   for(const i of list){ r-=i.weight; if(r<=0) return i; }
+  return list[0];
+}
+
+function hashSeed(value){
+  let hash=2166136261;
+  const text=String(value);
+  for(let i=0;i<text.length;i++){
+    hash^=text.charCodeAt(i);
+    hash=Math.imul(hash,16777619);
+  }
+  return hash>>>0;
+}
+
+function seededRandom(seed){
+  let value=hashSeed(seed);
+  return function(){
+    value+=0x6D2B79F5;
+    let t=value;
+    t=Math.imul(t^(t>>>15),t|1);
+    t^=t+Math.imul(t^(t>>>7),t|61);
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+
+function seededPick(list,rng){ return list[Math.floor(rng()*list.length)]; }
+
+function weightedPickWithRng(list,rng){
+  const total=list.reduce((sum,item)=>sum+item.weight,0);
+  let roll=rng()*total;
+  for(const item of list){ roll-=item.weight; if(roll<=0) return item; }
   return list[0];
 }
 
@@ -513,7 +557,7 @@ function nodeDistance(a,b){
   return Math.sqrt(dx*dx + dy*dy);
 }
 
-function biomeTileType(biome){
+function biomeTileType(biome,rng=Math.random){
   const entries = biome.types.map(type => {
     let weight = biome.bias[type] || 1;
     const plan = currentPlan();
@@ -525,115 +569,170 @@ function biomeTileType(biome){
     if(state.modifier?.enemyBoost && type === 'enemy') weight += 6;
     return {type, weight};
   });
-  return weightedPick(entries).type;
+  return weightedPickWithRng(entries,rng).type;
 }
 
 function rectsOverlap(a,b,pad=1){
   return !(a.gridX+a.w+pad <= b.gridX || b.gridX+b.w+pad <= a.gridX || a.gridY+a.h+pad <= b.gridY || b.gridY+b.h+pad <= a.gridY);
 }
 
-function carveDungeonRooms(){
+function validateDungeonGraph(rooms,entranceId=0,bossId=rooms.length-1){
+  const visited=new Set();
+  const queue=[entranceId];
+  while(queue.length){
+    const id=queue.shift();
+    if(visited.has(id) || !rooms[id]) continue;
+    visited.add(id);
+    rooms[id].links.forEach(next=>{ if(!visited.has(next)) queue.push(next); });
+  }
+  const brokenLinks=rooms.flatMap(room=>room.links
+    .filter(id=>!rooms[id] || !rooms[id].links.includes(room.id))
+    .map(id=>`${room.id}->${id}`));
+  const unsafeLocks=rooms.filter(room=>room.locked && (room.critical || room.depth<=1));
+  return {
+    valid:visited.size===rooms.length && visited.has(bossId) && !brokenLinks.length && !unsafeLocks.length,
+    reachable:visited.size,
+    total:rooms.length,
+    bossReachable:visited.has(bossId),
+    brokenLinks,
+    unsafeLocks:unsafeLocks.map(room=>room.id),
+  };
+}
+
+function carveDungeonRooms(seed=state.mapSeed){
   const biome = currentBiome();
   const plan = currentPlan();
-  const cols = 12;
+  const rng=seededRandom(seed);
+  const cols = 13;
   const rows = 9;
-  const roomTarget = 12 + state.zoneId * 2 + rand(4);
+  const floor=currentFloor();
+  const roomTarget = Math.min(22,12 + state.zoneId * 2 + Math.floor((floor-1)/2) + Math.floor(rng()*3));
   const rooms = [];
+  const occupied=new Map();
+  const biomeKey=Object.keys(BIOMES).find(key=>BIOMES[key]===biome) || 'city';
 
-  function makeRoom(id, gridX, gridY, w, h){
-    return {
+  function addRoom(gridX,gridY,options={}){
+    const cell=`${gridX},${gridY}`;
+    if(occupied.has(cell)) return occupied.get(cell);
+    const id=rooms.length;
+    const room={
       id,
       x:id,
       y:0,
-      gridX, gridY, w, h,
-      left: 6 + ((gridX + w/2) / cols) * 88,
-      top: 8 + ((gridY + h/2) / rows) * 84,
-      widthPct: Math.max(6, (w / cols) * 82),
-      heightPct: Math.max(7, (h / rows) * 78),
-      type: biomeTileType(biome),
-      roomName: pick(biome.rooms),
-      biomeKey: Object.keys(BIOMES).find(k=>BIOMES[k]===biome),
+      gridX,
+      gridY,
+      w:options.w || (rng()<.28 ? 2 : 1),
+      h:options.h || (rng()<.22 ? 2 : 1),
+      left:0,
+      top:0,
+      widthPct:options.widthPct || (rng()<.25 ? 10 : 7),
+      heightPct:options.heightPct || (rng()<.2 ? 10 : 7),
+      type:options.type || biomeTileType(biome,rng),
+      roomName:options.roomName || seededPick(biome.rooms,rng),
+      biomeKey,
       seen:false,
       cleared:false,
       links:[],
       locked:false,
       keyRoom:false,
       hazard:null,
+      critical:!!options.critical,
+      depth:options.depth || 0,
+      branch:options.branch ?? null,
+      role:options.role || 'side',
     };
+    room.left=6+((gridX+.5)/cols)*88;
+    room.top=8+((gridY+.5)/rows)*84;
+    rooms.push(room);
+    occupied.set(cell,room);
+    return room;
   }
 
-  let attempts = 0;
-  while(rooms.length < roomTarget && attempts < 220){
+  // Build a readable west-to-east critical path first.
+  const critical=[];
+  let y=4;
+  for(let depth=0;depth<7;depth++){
+    if(depth>0 && depth<6) y=clamp(y+(rng()<.33?-1:rng()>.67?1:0),1,7);
+    const room=addRoom(depth*2,y,{
+      critical:true,
+      depth,
+      role:depth===0?'entrance':depth===6?'boss':'route',
+      widthPct:depth===0||depth===6?9:7,
+      heightPct:depth===0||depth===6?9:7,
+    });
+    critical.push(room);
+    if(depth) connectNodes(critical[depth-1],room);
+  }
+
+  // Grow optional branches from the route; every new room connects immediately.
+  let attempts=0;
+  while(rooms.length<roomTarget && attempts<240){
     attempts++;
-    const w = 1 + rand(3);
-    const h = 1 + rand(2);
-    const gridX = rand(cols - w);
-    const gridY = rand(rows - h);
-    const candidate = makeRoom(rooms.length, gridX, gridY, w, h);
-    if(rooms.every(r=>!rectsOverlap(candidate,r,0))) rooms.push(candidate);
+    const parent=seededPick(rooms.filter(room=>room.role!=='boss'),rng);
+    const offsets=rng()<.62
+      ? [[0,-1],[0,1],[-1,0],[1,0]]
+      : [[-1,-1],[1,-1],[-1,1],[1,1]];
+    const [dx,dy]=seededPick(offsets,rng);
+    const x=clamp(parent.gridX+dx,0,cols-1);
+    const nextY=clamp(parent.gridY+dy,0,rows-1);
+    if(occupied.has(`${x},${nextY}`)) continue;
+    const room=addRoom(x,nextY,{
+      depth:parent.depth+1,
+      branch:parent.branch ?? parent.id,
+      role:'side',
+    });
+    connectNodes(parent,room);
   }
 
-  // Fallback if random placement is too sparse.
-  if(rooms.length < 8){
-    rooms.length = 0;
-    const coords = [[0,4],[2,2],[2,6],[4,4],[6,2],[6,6],[8,4],[10,4]];
-    coords.forEach((c,i)=>rooms.push(makeRoom(i,c[0],c[1],1+rand(2),1)));
-  }
-
-  // Re-id after generation.
-  rooms.forEach((r,i)=>{r.id=i; r.x=i;});
-
-  // Connect each room to nearest previous room for guaranteed connected graph.
-  const byLeft = rooms.slice().sort((a,b)=>a.left-b.left);
-  for(let i=1;i<byLeft.length;i++){
-    const room = byLeft[i];
-    const previous = byLeft.slice(0,i).sort((a,b)=>nodeDistance(room,a)-nodeDistance(room,b))[0];
-    connectNodes(room, previous);
-  }
-
-  // Add extra corridors for loops.
+  // Add a restrained number of loops between nearby rooms.
   rooms.forEach(room=>{
-    const near = rooms.filter(r=>r.id!==room.id).sort((a,b)=>nodeDistance(room,a)-nodeDistance(room,b)).slice(0,3);
-    near.forEach(other=>{ if(Math.random()<.32) connectNodes(room, other); });
+    const candidates=rooms.filter(other=>
+      other.id!==room.id &&
+      !room.links.includes(other.id) &&
+      Math.abs(room.gridX-other.gridX)+Math.abs(room.gridY-other.gridY)<=2
+    );
+    if(candidates.length && rng()<.28) connectNodes(room,seededPick(candidates,rng));
   });
 
-  // Assign hazards and locks.
-  rooms.forEach(room=>{
-    if(Math.random()<.32){
-      const weighted = biome.name === 'Sewer' ? ['flooded','dark','infested','locked'] :
-        biome.name === 'Factory' ? ['collapsing','locked','dark','infested'] :
-        biome.name === 'Farmland' ? ['overgrown','locked','infested','flooded'] :
-        ['dark','collapsing','locked','infested'];
-      room.hazard = pick(weighted);
-      if(room.hazard === 'locked') room.locked = true;
-    }
+  const hazardSets={
+    sewer:['flooded','dark','infested'],
+    factory:['collapsing','dark','infested'],
+    farmland:['overgrown','infested','flooded'],
+    city:['dark','collapsing','infested'],
+  };
+  rooms.filter(room=>room.role==='side').forEach(room=>{
+    if(rng()<.38) room.hazard=seededPick(hazardSets[biomeKey],rng);
   });
 
-  // Ensure at least one key room if locked rooms exist.
-  const lockedRooms = rooms.filter(r=>r.locked);
-  if(lockedRooms.length){
-    const keyCandidates = rooms.filter(r=>!r.locked);
-    const keyRoom = keyCandidates.length ? pick(keyCandidates) : rooms[0];
-    keyRoom.keyRoom = true;
-    keyRoom.roomName = 'Key Cache';
-    keyRoom.type = keyRoom.type === 'base' ? 'crate' : keyRoom.type;
+  // Locks only appear on optional branches, with a key on an earlier safe room.
+  const lockCandidates=rooms.filter(room=>room.role==='side' && room.depth>=2);
+  if(lockCandidates.length>=2 && rng()<.72){
+    const locked=seededPick(lockCandidates,rng);
+    locked.locked=true;
+    locked.hazard='locked';
+    const keyCandidates=rooms.filter(room=>!room.locked && room.role!=='boss' && room.depth<locked.depth);
+    const keyRoom=seededPick(keyCandidates.length?keyCandidates:[critical[1]],rng);
+    keyRoom.keyRoom=true;
+    keyRoom.roomName='Key Cache';
+    keyRoom.type='crate';
   }
 
   return rooms;
 }
 
-function generateMap(){
+function generateMap(seedOverride){
   const zone=currentZone();
   const biome=currentBiome();
   const plan=currentPlan();
+  state.dungeonSequence=(state.dungeonSequence||0)+1;
+  state.mapSeed=String(seedOverride || `${biomeKey()}-f${currentFloor()}-${state.planId}-${Date.now()}-${state.dungeonSequence}`);
   state.currentBoss = chooseDungeonBoss();
   state.map=[]; state.mapSize=zone.mapSize; state.revealedTiles=0;
 
-  state.map = carveDungeonRooms();
+  state.map = carveDungeonRooms(state.mapSeed);
 
-  // Pick entrance and boss rooms from opposite sides.
-  const entrance = state.map.slice().sort((a,b)=>a.left-b.left)[0];
-  const boss = state.map.slice().sort((a,b)=>b.left-a.left)[0];
+  const entrance = state.map.find(room=>room.role==='entrance') || state.map[0];
+  const boss = state.map.find(room=>room.role==='boss') || state.map[state.map.length-1];
   entrance.type = 'base';
   entrance.roomName = 'Kennel Entrance';
   entrance.seen = true;
@@ -647,37 +746,17 @@ function generateMap(){
   boss.locked = false;
   boss.hazard = boss.hazard === 'locked' ? null : boss.hazard;
 
-  // Connect adjacent grid rooms as corridors.
-  state.map.forEach(room => {
-    state.map.forEach(other => {
-      if(room.id === other.id) return;
-      const manhattan = Math.abs(room.gridX-other.gridX) + Math.abs(room.gridY-other.gridY);
-      if(manhattan === 1) connectNodes(room, other);
-    });
-  });
-
-  // If a room was isolated because of scattered placement, connect to nearest.
-  state.map.forEach(room => {
-    if(room.links.length) return;
-    const nearest = state.map.filter(o=>o.id!==room.id).sort((a,b)=>nodeDistance(room,a)-nodeDistance(room,b))[0];
-    if(nearest) connectNodes(room, nearest);
-  });
-
-  // Ensure entrance-to-boss route by connecting rooms in left-to-right order if needed.
-  const route = state.map.slice().sort((a,b)=>a.left-b.left);
-  for(let i=0;i<route.length-1;i++){
-    if(Math.random()<.55 || route[i].links.length<2) connectNodes(route[i], route[i+1]);
-  }
-
   // Add biome/plan flavour on branches.
   state.map.forEach(room => {
     if(room.type === 'base' || room.type === 'boss') return;
-    if(plan.focus==='wood' && Math.random()<.35) room.type = Math.random()<.6 ? 'tree' : 'grove';
-    if(plan.focus==='scrap' && Math.random()<.35) room.type = Math.random()<.6 ? 'scrap' : 'weapon';
-    if(plan.focus==='medical' && Math.random()<.35) room.type = 'medical';
-    if(plan.focus==='boss' && Math.random()<.22) room.type = 'enemy';
+    const flavour=seededRandom(`${state.mapSeed}-flavour-${room.id}`);
+    if(plan.focus==='wood' && flavour()<.35) room.type = flavour()<.6 ? 'tree' : 'grove';
+    if(plan.focus==='scrap' && flavour()<.35) room.type = flavour()<.6 ? 'scrap' : 'weapon';
+    if(plan.focus==='medical' && flavour()<.35) room.type = 'medical';
+    if(plan.focus==='boss' && flavour()<.22) room.type = 'enemy';
   });
 
+  state.mapValidation=validateDungeonGraph(state.map,entrance.id,boss.id);
   state.position={x:entrance.x,y:entrance.y};
   revealAround(entrance.x,entrance.y,state.dog.scoutRange);
   state.encounterText = `${biome.icon} Entered ${biome.name}: ${biome.desc}`;
@@ -756,10 +835,23 @@ function chooseTargetTile(){
 function stepToward(target){
   const current = getTile(state.position.x,state.position.y);
   if(current?.links?.length){
-    const linked = current.links.map(id=>state.map[id]).filter(Boolean);
-    if(linked.includes(target)) return target;
-    linked.sort((a,b)=>nodeDistance(a,target)-nodeDistance(b,target));
-    return linked[0];
+    const queue=[current.id];
+    const previous=new Map([[current.id,null]]);
+    while(queue.length){
+      const id=queue.shift();
+      if(id===target.id) break;
+      (state.map[id]?.links || []).forEach(next=>{
+        if(!previous.has(next)){
+          previous.set(next,id);
+          queue.push(next);
+        }
+      });
+    }
+    if(previous.has(target.id)){
+      let step=target.id;
+      while(previous.get(step)!==current.id && previous.get(step)!==null) step=previous.get(step);
+      return state.map[step] || current;
+    }
   }
 
   const dx=target.x-state.position.x, dy=target.y-state.position.y;
@@ -1765,7 +1857,8 @@ function mapEnemySprite(tile){ if(tile.type==='boss') return (state.currentBoss 
 
 function renderMap(){
   const biome = currentBiome();
-  $('map').className = `map dungeon-map biome-${Object.keys(BIOMES).find(k=>BIOMES[k]===biome)}`;
+  const activeBiomeKey=Object.keys(BIOMES).find(k=>BIOMES[k]===biome) || 'city';
+  $('map').className = `map dungeon-map biome-${activeBiomeKey}`;
   const seenLinks = [];
   state.map.forEach(tile => {
     if(!tile.seen || !tile.links) return;
@@ -1776,13 +1869,16 @@ function renderMap(){
       const dx = b.left-a.left, dy = b.top-a.top;
       const len = Math.sqrt(dx*dx+dy*dy);
       const angle = Math.atan2(dy,dx) * 180 / Math.PI;
-      seenLinks.push(`<div class="path-line ${tile.locked || other.locked ? 'locked-path' : ''}" style="left:${a.left}%;top:${a.top}%;width:${len}%;transform:rotate(${angle}deg)"></div>`);
+      const routeClass=tile.critical && other.critical ? 'critical-path' : 'branch-path';
+      seenLinks.push(`<div class="path-line ${routeClass} ${tile.locked || other.locked ? 'locked-path' : ''}" style="left:${a.left}%;top:${a.top}%;width:${len}%;transform:rotate(${angle}deg)"></div>`);
     });
   });
   const paths = seenLinks.join('');
 
-  const biomeKey = Object.keys(BIOMES).find(k=>BIOMES[k]===biome);
-  const biomeBadge = `<div class="biome-badge"><img src="${TILE_ART[biomeKey]}" alt="${biome.name}"><span>${biome.icon} ${biome.name}</span></div>`;
+  const biomeBadge = `<div class="biome-badge"><img src="${TILE_ART[activeBiomeKey]}" alt="${biome.name}"><span>${biome.icon} ${biome.name}</span></div>`;
+  const seedLabel=state.mapSeed.split('-').slice(-2).join('-').toUpperCase();
+  const mapMeta=`<div class="dungeon-meta"><span>Route ${seedLabel}</span><span>${state.map.length} rooms</span><span>${state.mapValidation?.valid?'Connected':'Route warning'}</span></div>`;
+  const dungeonDecor=`<img class="dungeon-decor" src="${DUNGEON_ART[activeBiomeKey]}" alt="" aria-hidden="true">`;
 
   const outlines = state.map.filter(tile=>tile.seen).map(tile => {
     const p = mapPoint(tile);
@@ -1793,14 +1889,15 @@ function renderMap(){
 
   const pois=state.map.map(tile=>{
     const point=mapPoint(tile); const current=tile.x===state.position.x && tile.y===state.position.y && state.running;
-    const classes=['poi',tile.type,current?'current':'',!tile.seen?'unseen':'',tile.cleared?'cleared':''].join(' ');
+    const classes=['poi',tile.type,tile.critical?'critical-room':'side-room',current?'current':'',!tile.seen?'unseen':'',tile.cleared?'cleared':''].join(' ');
     const enemySprite=mapEnemySprite(tile);
     let hpWidth=tile.type==='boss'?100:72;
     if(current && state.combat?.enemy) hpWidth=clamp(state.combat.enemy.hp/state.combat.enemy.maxHp*100,0,100);
     const health=(!tile.cleared && tile.seen && ['enemy','boss'].includes(tile.type))?`<div class="map-hp"><span style="width:${hpWidth}%"></span></div>`:'';
     const img=enemySprite && tile.seen && !tile.cleared?`<img class="map-enemy-sprite" src="${enemySprite}" alt="${tile.type}">`:`<img class="tile-img" src="${tileImg(tile)}" alt="${tile.type}">`;
     const label = tile.seen ? `<span class="room-label">${tile.roomName || tile.type}</span>` : '';
-    const tag = tile.seen && roomHazardTag(tile) ? `<span class="room-tag">${roomHazardTag(tile)}</span>` : '';
+    const marker=tile.keyRoom?DUNGEON_ART.key:tile.locked?DUNGEON_ART.lock:tile.hazard?DUNGEON_ART.hazard:null;
+    const tag=tile.seen && marker ? `<span class="room-tag"><img src="${marker}" alt="${roomHazardTag(tile)}"></span>` : '';
     const extraClass = `${tile.locked ? ' locked' : ''}${tile.hazard ? ' hazard-room' : ''}${tile.keyRoom ? ' key-room' : ''}`;
     return `<div class="${classes}${extraClass}" title="${tile.roomName || tile.type}" style="left:${point.left}%;top:${point.top}%">${tile.seen?img:''}${health}${tag}${label}</div>`;
   }).join('');
@@ -1814,8 +1911,15 @@ function renderMap(){
 
   const dogPoint=dogMapPosition();
   const dog=state.running?`<img class="map-dog" src="${state.dog.sprite}" alt="dog" style="left:${dogPoint.left}%;top:${dogPoint.top}%">`:'';
-  $('map').innerHTML=biomeBadge+outlines+paths+pois+roamers+dog;
+  $('map').innerHTML=dungeonDecor+biomeBadge+mapMeta+outlines+paths+pois+roamers+dog;
 }
+
+window.generateDungeonFromSeed = function(seed){
+  generateMap(seed);
+  render();
+  return {seed:state.mapSeed,rooms:state.map,mapValidation:state.mapValidation};
+};
+window.validateDungeonGraph = validateDungeonGraph;
 
 function renderLootFilter(){
   ensureLootFilter();
@@ -2111,14 +2215,14 @@ showOfflineReward();
 /* ===== Bark Raiders v0.23 extension ===== */
 (function(){
   const BREEDS_V23 = {
-    shiba:{label:'Shiba Inu', role:'Balanced scavenger', legacy:'shiba', hp:0, attack:1, defence:0, crit:5, speed:0, carry:0, scout:0, rare:0, extract:0, colors:{red:'#d1783d', black:'#322824', sesame:'#8b664b', cream:'#dcc6a0'}},
-    jack:{label:'Jack Russell', role:'Aggressive scrapper', legacy:'jack', hp:4, attack:2, defence:1, crit:5, speed:1, carry:0, scout:0, rare:2, extract:2, colors:{tan:'#d9ba88', black:'#2e2a28', tri:'#b37d55'}},
-    collie:{label:'Border Collie', role:'Pathfinder scout', legacy:'collie', hp:-2, attack:0, defence:0, crit:0, speed:1, carry:0, scout:1, rare:0, extract:8, colors:{classic:'#222222', red:'#804734', merle:'#8f949f'}},
-    dachshund:{label:'Dachshund', role:'Sneaky extractor', legacy:'dachshund', hp:-4, attack:-1, defence:0, crit:4, speed:0, carry:2, scout:0, rare:3, extract:12, colors:{blacktan:'#2a2320', chocolate:'#644430', dapple:'#8d7c72'}},
-    pom:{label:'Pomeranian', role:'Rare loot goblin', legacy:'pom', hp:-8, attack:0, defence:-1, crit:8, speed:1, carry:-4, scout:0, rare:8, extract:4, colors:{orange:'#d48641', cream:'#e8d2af', black:'#24201d', white:'#f1eee9', sable:'#8c6a44'}},
-    bulldog:{label:'Bulldog', role:'Tanky brawler', legacy:'jack', hp:10, attack:1, defence:2, crit:0, speed:-1, carry:2, scout:0, rare:0, extract:-4, colors:{tan:'#b6865f', brindle:'#6f4a33', white:'#e8e1d8'}},
-    lab:{label:'Labrador', role:'Recovery specialist', legacy:'shiba', hp:6, attack:0, defence:1, crit:0, speed:0, carry:2, scout:0, rare:0, extract:4, heal:4, colors:{yellow:'#d8c08c', black:'#272321', choco:'#6f4930'}},
-    greyhound:{label:'Greyhound', role:'Fast runner', legacy:'collie', hp:-2, attack:0, defence:-1, crit:4, speed:2, carry:-2, scout:1, rare:1, extract:10, colors:{fawn:'#b58b64', blue:'#747d85', black:'#1d1b1a'}},
+    shiba:{label:'Shiba Inu', role:'Balanced scavenger', trait:'Steady Paws: a useful boost to every core raid job.', legacy:'shiba', hp:4, attack:1, defence:1, crit:3, speed:0, carry:2, scout:0, rare:0, extract:2, colors:{red:'#d1783d', black:'#322824', sesame:'#8b664b', cream:'#dcc6a0'}},
+    jack:{label:'Jack Russell', role:'Aggressive scrapper', trait:'First In: higher damage, critical chance, and movement speed.', legacy:'jack', hp:0, attack:2, defence:0, crit:6, speed:1, carry:0, scout:0, rare:0, extract:0, colors:{tan:'#d9ba88', black:'#2e2a28', tri:'#b37d55'}},
+    collie:{label:'Border Collie', role:'Pathfinder scout', trait:'Route Sense: reveals farther, moves faster, and extracts more safely.', legacy:'collie', hp:2, attack:0, defence:0, crit:2, speed:1, carry:2, scout:1, rare:0, extract:6, colors:{classic:'#222222', red:'#804734', merle:'#8f949f'}},
+    dachshund:{label:'Dachshund', role:'Cache specialist', trait:'Burrow Nose: carries more and improves rare finds and extraction.', legacy:'dachshund', hp:0, attack:0, defence:1, crit:2, speed:0, carry:4, scout:0, rare:4, extract:6, colors:{blacktan:'#2a2320', chocolate:'#644430', dapple:'#8d7c72'}},
+    pom:{label:'Pomeranian', role:'Lucky skirmisher', trait:'Chaos Luck: better critical hits, rare loot, and quick movement.', legacy:'pom', hp:-2, attack:0, defence:0, crit:5, speed:1, carry:0, scout:0, rare:7, extract:2, colors:{orange:'#d48641', cream:'#e8d2af', black:'#24201d', white:'#f1eee9', sable:'#8c6a44'}},
+    bulldog:{label:'Bulldog', role:'Armoured hauler', trait:'Hard Head: much tougher and able to haul a larger pack.', legacy:'jack', hp:8, attack:1, defence:2, crit:0, speed:0, carry:4, scout:0, rare:0, extract:0, colors:{tan:'#b6865f', brindle:'#6f4a33', white:'#e8e1d8'}},
+    lab:{label:'Labrador', role:'Recovery specialist', trait:'Field Medic: tougher bandages plus a sturdy all-round frame.', legacy:'shiba', hp:6, attack:0, defence:1, crit:0, speed:0, carry:2, scout:0, rare:0, extract:2, heal:4, colors:{yellow:'#d8c08c', black:'#272321', choco:'#6f4930'}},
+    greyhound:{label:'Greyhound', role:'Fast runner', trait:'Breakaway: exceptional movement and dodge with safer extraction.', legacy:'collie', hp:-4, attack:0, defence:-1, crit:3, speed:2, carry:0, scout:1, rare:0, extract:5, colors:{fawn:'#b58b64', blue:'#747d85', black:'#1d1b1a'}},
   };
 
   function v23BreedKeys(){ return Object.keys(BREEDS_V23); }
@@ -2204,6 +2308,7 @@ showOfflineReward();
       name:v23Safe(r.name, 'Raider '+(idx+1)),
       breed:breedDef(r.breed) ? r.breed : 'shiba',
       color:(r.color && breedDef(r.breed || 'shiba').colors[r.color]) ? r.color : Object.keys(breedDef(r.breed || 'shiba').colors)[0],
+      accent:r.accent || '#8bd77f',
       level:r.level || 1,
       xp:r.xp || 0,
       xpNext:r.xpNext || 40,
@@ -2412,6 +2517,7 @@ showOfflineReward();
       rare:b.rare || 0,
       extract:b.extract || 0,
       heal:b.heal || 0,
+      trait:b.trait || b.role,
       colorLabel:r.color,
     };
   };
@@ -2437,7 +2543,6 @@ showOfflineReward();
     state.dog.xpNext = r.xpNext || 40;
     __origApplyUpgrades();
     // breed-special passive
-    if(r.breed === 'lab') state.dog.healPower = (state.dog.healPower || 0) + 4;
     syncRaiderFromState();
   };
 
@@ -2634,7 +2739,19 @@ showOfflineReward();
       <div class="gear">
         <strong>Breed Trait</strong>
         <span>${breed.role}</span>
-        <span>Stat lean: ${breed.attack>0?'+ATK ':''}${breed.defence>0?'+DEF ':''}${breed.speed>0?'+SPD ':''}${breed.extract>0?'+EXTRACT ':''}${breed.rare>0?'+RARE ':''}${breed.carry>0?'+CARRY ':''}</span>
+        <span>${breed.trait}</span>
+        <span>Bonuses: ${[
+          breed.hp&&`${breed.hp>0?'+':''}${breed.hp} HP`,
+          breed.attack&&`${breed.attack>0?'+':''}${breed.attack} ATK`,
+          breed.defence&&`${breed.defence>0?'+':''}${breed.defence} DEF`,
+          breed.crit&&`${breed.crit>0?'+':''}${breed.crit}% CRIT`,
+          breed.speed&&`${breed.speed>0?'+':''}${breed.speed} SPD`,
+          breed.carry&&`${breed.carry>0?'+':''}${breed.carry} CARRY`,
+          breed.scout&&`${breed.scout>0?'+':''}${breed.scout} SCOUT`,
+          breed.rare&&`${breed.rare>0?'+':''}${breed.rare}% RARE`,
+          breed.extract&&`${breed.extract>0?'+':''}${breed.extract}% EXTRACT`,
+          breed.heal&&`+${breed.heal} HEAL`,
+        ].filter(Boolean).join(' · ')}</span>
       </div>
       <div class="gear">
         <strong>Condition</strong>
@@ -2709,6 +2826,13 @@ showOfflineReward();
   if($('saveProfileBtn')) $('saveProfileBtn').addEventListener('click', window.saveDispatchProfile);
   if($('loadProfileBtn')) $('loadProfileBtn').addEventListener('click', window.loadDispatchProfile);
   if($('deleteProfileBtn')) $('deleteProfileBtn').addEventListener('click', window.deleteDispatchProfile);
+
+  window.BREEDS_V23 = BREEDS_V23;
+  window.breedDef = breedDef;
+  window.v23MetaState = v23MetaState;
+  window.ensureRoster = ensureRoster;
+  window.currentRaider = currentRaider;
+  window.masteryFor = masteryFor;
 
   loadV23Meta();
   ensureRoster();

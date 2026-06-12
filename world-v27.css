@@ -1,11 +1,16 @@
-.dashboard-map-panel { overflow: hidden; }
+.dashboard-map-panel {
+  overflow: hidden;
+}
 #map.map {
   min-height: 0;
   aspect-ratio: 3 / 2;
   background: #111;
   border-color: rgba(255,217,112,.25);
 }
-#map::before, #map::after { display: none; }
+#map::before,
+#map::after {
+  display: none;
+}
 #raidWorldCanvas {
   display: block;
   width: 100%;
@@ -35,11 +40,26 @@
   text-transform: uppercase;
   backdrop-filter: blur(4px);
 }
-.world-mode { color: #8acf7f !important; }
-.compact-legend { opacity: .84; }
+.world-mode {
+  color: #8acf7f !important;
+}
+.compact-legend {
+  opacity: .84;
+}
 @media (max-width: 620px) {
-  #map.map { min-height: 360px; aspect-ratio: auto; }
-  #raidWorldCanvas { height: 360px; object-fit: cover; }
-  .world-overlay { inset: 6px 6px auto 6px; }
-  .world-overlay span { padding: 4px 6px; font-size: .55rem; }
+  #map.map {
+    min-height: 360px;
+    aspect-ratio: auto;
+  }
+  #raidWorldCanvas {
+    height: 360px;
+    object-fit: cover;
+  }
+  .world-overlay {
+    inset: 6px 6px auto 6px;
+  }
+  .world-overlay span {
+    padding: 4px 6px;
+    font-size: .55rem;
+  }
 }
