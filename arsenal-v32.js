@@ -5,15 +5,20 @@
     Legendary:{mult:1.5,color:'#ffc85e'}, Unique:{mult:1.62,color:'#ff795e'},
   };
   const WEAPONS={
-    servicePistol:{name:'K9 Service Pistol',slot:'sidearm',weaponClass:'pistol',damage:13,range:5.8,recoil:22,magSize:15,fireRate:3.2,penetration:8,crit:3,ammoType:'9mm',visual:'pistol'},
-    heavyPistol:{name:'Ironpaw .45',slot:'sidearm',weaponClass:'pistol',damage:18,range:5.2,recoil:34,magSize:8,fireRate:2.2,penetration:15,crit:5,ammoType:'.45',visual:'heavy-pistol'},
-    machinePistol:{name:'Yap-9 Machine Pistol',slot:'sidearm',weaponClass:'machine pistol',damage:9,range:4.8,recoil:48,magSize:20,fireRate:9.5,penetration:6,crit:1,ammoType:'9mm',visual:'machine-pistol'},
-    pumpShotgun:{name:'Kennel Breacher',slot:'primary',weaponClass:'shotgun',damage:30,range:3.5,recoil:62,magSize:6,fireRate:1.1,penetration:12,crit:2,ammoType:'12 gauge',visual:'pump-shotgun'},
-    tacticalShotgun:{name:'SP-12 Scav Shotgun',slot:'primary',weaponClass:'shotgun',damage:25,range:4,recoil:52,magSize:8,fireRate:2.1,penetration:14,crit:3,ammoType:'12 gauge',visual:'tactical-shotgun'},
-    compactSmg:{name:'Burrow MP',slot:'primary',weaponClass:'smg',damage:11,range:5.6,recoil:40,magSize:30,fireRate:10.5,penetration:9,crit:2,ammoType:'9mm',visual:'smg'},
-    assaultRifle:{name:'AR-K9 Patrol Rifle',slot:'primary',weaponClass:'rifle',damage:20,range:8.4,recoil:38,magSize:30,fireRate:7.2,penetration:24,crit:4,ammoType:'5.56',visual:'assault-rifle'},
-    battleRifle:{name:'Old Guard Battle Rifle',slot:'primary',weaponClass:'rifle',damage:28,range:9,recoil:58,magSize:20,fireRate:4.2,penetration:38,crit:6,ammoType:'7.62',visual:'battle-rifle'},
-    lightMachineGun:{name:'Pack Support LMG',slot:'primary',weaponClass:'machine gun',damage:18,range:7.8,recoil:55,magSize:60,fireRate:8.5,penetration:26,crit:2,ammoType:'5.56 belt',visual:'lmg'},
+    servicePistol:{name:'Bark-17 Service Pistol',slot:'sidearm',weaponClass:'pistol',damage:13,range:5.8,recoil:22,magSize:17,fireRate:3.2,penetration:8,crit:3,ammoType:'9mm',visual:'pistol',inspiredBy:'G17'},
+    heavyPistol:{name:'Mutt-11 .45',slot:'sidearm',weaponClass:'pistol',damage:18,range:5.2,recoil:34,magSize:8,fireRate:2.2,penetration:15,crit:5,ammoType:'.45',visual:'heavy-pistol',inspiredBy:'M1911'},
+    machinePistol:{name:'Yap-93 Machine Pistol',slot:'sidearm',weaponClass:'machine pistol',damage:9,range:4.8,recoil:48,magSize:20,fireRate:9.5,penetration:6,crit:1,ammoType:'9mm',visual:'machine-pistol',inspiredBy:'93R'},
+    pumpShotgun:{name:'Retriever-870 Breacher',slot:'primary',weaponClass:'shotgun',damage:30,range:3.5,recoil:62,magSize:6,fireRate:1.1,penetration:12,crit:2,ammoType:'12 gauge',visual:'pump-shotgun',inspiredBy:'870'},
+    tacticalShotgun:{name:'SPAWS-12 Scav Shotgun',slot:'primary',weaponClass:'shotgun',damage:25,range:4,recoil:52,magSize:8,fireRate:2.1,penetration:14,crit:3,ammoType:'12 gauge',visual:'tactical-shotgun',inspiredBy:'SPAS-12'},
+    compactSmg:{name:'MPaw-5 Burrow SMG',slot:'primary',weaponClass:'smg',damage:11,range:5.6,recoil:40,magSize:30,fireRate:10.5,penetration:9,crit:2,ammoType:'9mm',visual:'smg',inspiredBy:'MP5'},
+    compactPdw:{name:'Paw-90 Cache PDW',slot:'primary',weaponClass:'smg',damage:10,range:6.2,recoil:33,magSize:50,fireRate:11.2,penetration:13,crit:2,ammoType:'5.7mm',visual:'smg',inspiredBy:'P90'},
+    umpSmg:{name:'UMPaw-45 Yard SMG',slot:'primary',weaponClass:'smg',damage:15,range:5.4,recoil:45,magSize:25,fireRate:7.2,penetration:16,crit:3,ammoType:'.45',visual:'smg',inspiredBy:'UMP45'},
+    carbine:{name:'Mutt-4 Patrol Carbine',slot:'primary',weaponClass:'rifle',damage:18,range:7.6,recoil:34,magSize:30,fireRate:8.1,penetration:21,crit:3,ammoType:'5.56',visual:'assault-rifle',inspiredBy:'M4'},
+    assaultRifle:{name:'AK-9 Bone Rattler',slot:'primary',weaponClass:'rifle',damage:22,range:7.8,recoil:46,magSize:30,fireRate:6.4,penetration:28,crit:4,ammoType:'7.62',visual:'assault-rifle',inspiredBy:'AKM'},
+    bullpupRifle:{name:'AUGgie A3 Bullpup',slot:'primary',weaponClass:'rifle',damage:19,range:8.6,recoil:31,magSize:30,fireRate:7.5,penetration:23,crit:5,ammoType:'5.56',visual:'assault-rifle',inspiredBy:'AUG A3'},
+    battleRifle:{name:'SCARF-H Battle Rifle',slot:'primary',weaponClass:'rifle',damage:28,range:9,recoil:58,magSize:20,fireRate:4.2,penetration:38,crit:6,ammoType:'7.62',visual:'battle-rifle',inspiredBy:'SCAR-H'},
+    marksmanRifle:{name:'Good-Boy M14 Marksman',slot:'primary',weaponClass:'rifle',damage:31,range:10.2,recoil:54,magSize:20,fireRate:3.6,penetration:40,crit:8,ammoType:'7.62',visual:'battle-rifle',inspiredBy:'M14'},
+    lightMachineGun:{name:'M249 Pack Automatic',slot:'primary',weaponClass:'machine gun',damage:18,range:7.8,recoil:55,magSize:60,fireRate:8.5,penetration:26,crit:2,ammoType:'5.56 belt',visual:'lmg',inspiredBy:'M249'},
   };
   const ARMOUR={
     earcutHelmet:{name:'Ear-Cut Patrol Helmet',slot:'helmet',armour:3,durabilityMax:36,coverage:.28,hp:2,visual:'patrol-helmet'},
@@ -65,14 +70,26 @@
   }
   function starter(){
     return [
-      finish({...WEAPONS.servicePistol,name:'Starter Service Pistol'},'Common'),
+      finish({...WEAPONS.servicePistol,name:'Starter Bark-17 Service Pistol'},'Common'),
       finish({...ARMOUR.softVest,name:'Scrap-Lined Field Vest'},'Common'),
       finish({...ARMOUR.earcutHelmet,name:'Open-Ear Scout Cap',armour:1,durabilityMax:24},'Common'),
       finish({...ARMOUR.scoutPack,name:'Small Backpack',carry:8},'Common'),
       finish({...CHARMS.luckyBone},'Common'),
     ];
   }
-  state.stash=Array.isArray(saved.stash)&&saved.stash.length?saved.stash.map(item=>finish(item,item.rarity)):starter();
+  const LEGACY_WEAPON_NAMES={
+    'Starter Service Pistol':'Starter Bark-17 Service Pistol',
+    'K9 Service Pistol':'Bark-17 Service Pistol',
+    'Ironpaw .45':'Mutt-11 .45',
+    'Yap-9 Machine Pistol':'Yap-93 Machine Pistol',
+    'Kennel Breacher':'Retriever-870 Breacher',
+    'SP-12 Scav Shotgun':'SPAWS-12 Scav Shotgun',
+    'Burrow MP':'MPaw-5 Burrow SMG',
+    'AR-K9 Patrol Rifle':'AK-9 Bone Rattler',
+    'Old Guard Battle Rifle':'SCARF-H Battle Rifle',
+    'Pack Support LMG':'M249 Pack Automatic',
+  };
+  state.stash=Array.isArray(saved.stash)&&saved.stash.length?saved.stash.map(item=>finish({...item,name:LEGACY_WEAPON_NAMES[item.name]||item.name},item.rarity)):starter();
   state.loadout=saved.loadout||{};
   function find(id){return state.stash.find(item=>item.id===id);}
   function firstSlot(slot){return state.stash.find(item=>item.slot===slot);}

@@ -1,4 +1,14 @@
-# Bark Raiders v0.35
+# Bark Raiders v0.36
+
+## v0.36 Directional Movement and Floor Progression
+
+- Added dedicated up, down, left, and right Shiba walking sprites with four gait frames per direction.
+- Removed combat coordinate movement so firing and recoil effects cannot push dogs or enemies around the map.
+- Locked the camera directly to the dog and hardened movement against non-walkable boundary tiles.
+- Moved raid entrances toward the map interior so scavenging routes naturally explore in every direction.
+- Added a dedicated level-exit stairwell asset on all non-boss floors.
+- Auto-Raid now continues through newly unlocked floors; boss floors remain locked behind boss victory.
+- Expanded the modern weapon pool with dog-pun names inspired by recognizable real-world weapon families.
 
 ## v0.35 Combat, Loot, and Presentation Polish
 

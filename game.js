@@ -19,7 +19,7 @@ const SPRITES = {
 const TILE_ART = {
   base:'assets/sprites/v34/loot/03-06.png', trader:'assets/sprites/v34/loot/03-04.png', city:'assets/biome-city.svg', sewer:'assets/biome-sewer.svg', factory:'assets/biome-factory.svg', farmland:'assets/biome-farmland.svg', crate:'assets/sprites/v34/loot/01-01.png', tree:'assets/tile-tree.svg', grove:'assets/tile-grove.svg',
   food:'assets/sprites/v34/loot/01-04.png', water:'assets/sprites/v34/loot/01-05.png', scrap:'assets/sprites/v34/loot/01-06.png', medical:'assets/sprites/v34/loot/01-03.png', metal:'assets/sprites/v34/loot/01-06.png',
-  weapon:'assets/sprites/v34/loot/02-01.png', event:'assets/tile-event.svg', enemy:'assets/tile-enemy.svg', rare:'assets/sprites/v34/loot/02-03.png',
+  weapon:'assets/sprites/v34/loot/02-01.png', event:'assets/tile-event.svg', exit:'assets/sprites/v36/floor-exit.svg', enemy:'assets/tile-enemy.svg', rare:'assets/sprites/v34/loot/02-03.png',
   boss:'assets/sprites/v34/loot/02-03.png', cleared:'assets/tile-cleared.svg', empty:'assets/tile-empty.svg',
 };
 
@@ -1852,7 +1852,7 @@ function renderCombat(){
   $('encounterText').textContent=state.encounterText;
 }
 
-function tileImg(tile){ if(tile.cleared && tile.type!=='base') return TILE_ART.cleared; if(tile.type==='exit') return TILE_ART.event; return TILE_ART[tile.type]||TILE_ART.empty; }
+function tileImg(tile){ if(tile.cleared && tile.type!=='base') return TILE_ART.cleared; return TILE_ART[tile.type]||TILE_ART.empty; }
 function mapEnemySprite(tile){ if(tile.type==='boss') return (state.currentBoss || currentZone().boss).sprite; if(tile.type==='enemy'){ const list=currentZone().enemies; return list[(tile.x*7+tile.y*11)%list.length].sprite; } return null; }
 
 function renderMap(){
