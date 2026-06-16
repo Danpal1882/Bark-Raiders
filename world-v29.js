@@ -168,21 +168,39 @@
   }
   function spawn(){
     const w=state.world;if(!w?.ready)return;const r=rng(`${state.mapSeed}-hostiles`);w.enemies=[];state.roamEnemies=[];
-    for(let i=0;i<3+state.zoneId+(currentPlan().roamers||0);i++){const template=pick(currentZone().enemies),pos=randomFloor(w,r,w.dog),hp=Math.round(template.hp*(state.weather?.enemy||1)*currentPlan().enemy),e={id:`world-enemy-${i}`,template,x:pos.x,y:pos.y,path:[],hp,maxHp:hp,active:true,facing:-1,think:r()*2,poseUntil:0,hitUntil:0};w.enemies.push(e);state.roamEnemies.push({id:e.id,template,sprite:template.sprite,name:template.name,hp,maxHp:hp,active:true,left:0,top:0});}
+    for(let i=0;i<3+state.zoneId+(currentPlan().roamers||0);i++){const template=pick(currentZone().enemies),pos=randomFloor(w,r,w.dog),hp=Math.round(template.hp*(state.weather?.enemy||1)*currentPlan().enemy),patrol=randomFloor(w,r,pos),e={id:`world-enemy-${i}`,template,x:pos.x,y:pos.y,path:[],hp,maxHp:hp,active:true,facing:-1,think:r()*2,poseUntil:0,hitUntil:0,alert:'patrol',lastSeen:null,patrol,awareness:0};w.enemies.push(e);state.roamEnemies.push({id:e.id,template,sprite:template.sprite,name:template.name,hp,maxHp:hp,active:true,left:0,top:0,alert:e.alert});}
+  }
+  function syncEnemySource(e){const source=state.roamEnemies.find(v=>v.id===e.id);if(source){source.hp=e.hp;source.maxHp=e.maxHp;source.active=e.active;source.alert=e.alert;source.left=e.x;source.top=e.y;}return source;}
+  function updateEnemyIntent(w,e,dt){
+    const source=syncEnemySource(e);
+    if(!e.active||source?.active===false){e.active=false;return false;}
+    const ep=enemyProfile(e.template),distance=dist(e,w.dog),visible=lineOfSight(w,e,w.dog);
+    const hearRange=5.5+state.zoneId*.6,spotRange=8+state.zoneId*.8+(e.template.behavior==='chaser'?2.5:0),attackRange=Math.min(Math.max(2.2,ep.range),Math.max(2.4,weaponProfile().range+.75));
+    if(visible&&distance<=spotRange){e.awareness=Math.min(100,e.awareness+dt*(distance<=attackRange?170:95));e.lastSeen={x:w.dog.x,y:w.dog.y};}
+    else if(distance<=hearRange){e.awareness=Math.min(82,e.awareness+dt*36);e.lastSeen=e.lastSeen||{x:w.dog.x,y:w.dog.y};}
+    else e.awareness=Math.max(0,e.awareness-dt*18);
+    const prior=e.alert;
+    e.alert=e.awareness>82?'engaging':e.awareness>38?'investigating':'patrol';
+    if(prior!==e.alert&&e.alert!=='patrol')e.poseUntil=performance.now()+450;
+    if(e.alert==='engaging'&&visible&&distance<=attackRange){e.path=[];startCombat(e.template,false,e.id);return true;}
+    e.think-=dt;
+    if(e.think<=0||!e.path.length){
+      const destination=e.alert==='engaging'?w.dog:e.alert==='investigating'?(e.lastSeen||w.dog):e.patrol;
+      e.path=path(w,e,destination);
+      if(e.alert==='patrol'&&(!e.path.length||dist(e,e.patrol)<1.1))e.patrol=randomFloor(w,Math.random,w.dog);
+      e.think=e.alert==='patrol'?1.2+Math.random()*1.4:.35+Math.random()*.35;
+    }
+    return false;
   }
   function update(w,dt){
     if(!state.running||state.mode!=='roaming')return;
     if(!w.dog.path.length){if(search(w))return;const p=target(w);if(p){w.dog.target=p;w.dog.path=path(w,w.dog,p);}else endRaid(true);}
     const n=w.dog.path[0];if(n){if(!floor(w,Math.floor(n.x),Math.floor(n.y))){w.dog.path=[];w.dog.target=null;return;}const dx=n.x-w.dog.x,dy=n.y-w.dog.y,d=Math.hypot(dx,dy),speed=1.45+state.dog.speed*.22;if(Math.abs(dx)>Math.abs(dy)){w.dog.direction=dx<0?'left':'right';w.dog.facing=dx<0?-1:1;}else if(Math.abs(dy)>.02)w.dog.direction=dy<0?'up':'down';w.directionsSeen=w.directionsSeen||new Set();w.directionsSeen.add(w.dog.direction);if(d<speed*dt){if(floor(w,Math.floor(n.x),Math.floor(n.y))){w.dog.x=n.x;w.dog.y=n.y;}w.dog.path.shift();reveal(w,w.dog.x,w.dog.y,5);search(w);}else{const nextX=w.dog.x+dx/d*speed*dt,nextY=w.dog.y+dy/d*speed*dt;if(floor(w,Math.floor(nextX),Math.floor(nextY))){w.dog.x=clamp(nextX,.5,W-.5);w.dog.y=clamp(nextY,.5,H-.5);}else w.dog.path=[];}if(performance.now()-w.dog.trailAt>155){w.dog.trailAt=performance.now();w.particles.push({x:w.dog.x-w.dog.facing*.16,y:w.dog.y+.22,vx:(Math.random()-.5)*.18,vy:-.08-Math.random()*.12,life:.45,max:.45,color:keyDust(),size:1.5+Math.random()});}}
     for(const e of w.enemies){
-      const source=state.roamEnemies.find(v=>v.id===e.id);
-      if(!e.active||source?.active===false){e.active=false;continue;}
-      const range=Math.max(weaponProfile().range,enemyProfile(e.template).range);
-      if(dist(e,w.dog)<=range&&lineOfSight(w,e,w.dog)){e.path=[];startCombat(e.template,false,e.id);break;}
-      e.think-=dt;
-      if(e.think<=0||!e.path.length){e.path=path(w,e,dist(e,w.dog)<9?w.dog:randomFloor(w,Math.random,e));e.think=.8+Math.random();}
+      if(updateEnemyIntent(w,e,dt))break;
       const p=e.path[0];
       if(p){const dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy),speed=1.05;e.facing=dx<0?-1:1;if(d<speed*dt){e.x=p.x;e.y=p.y;e.path.shift();}else{e.x+=dx/d*speed*dt;e.y+=dy/d*speed*dt;}}
+      syncEnemySource(e);
     }
     w.particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=.9*dt;p.life-=dt;});
     w.particles=w.particles.filter(p=>p.life>0);
@@ -223,14 +241,19 @@
         if(image.complete)x.save(),x.globalAlpha=.72,x.drawImage(image,xx*T-4,y*T-8,T+8,T+8),x.restore();
       }
     }
+    const activeTarget=w.dog.target||w.dog.path?.[0];if(activeTarget){x.save();x.strokeStyle='#7ce8d4';x.fillStyle='rgba(124,232,212,.1)';x.lineWidth=2;x.setLineDash([7,6]);x.beginPath();x.moveTo(w.dog.x*T,w.dog.y*T-10);x.lineTo(activeTarget.x*T,activeTarget.y*T-10);x.stroke();x.setLineDash([]);x.beginPath();x.arc(activeTarget.x*T,activeTarget.y*T-10,10+Math.sin(time/160)*2,0,Math.PI*2);x.fill();x.stroke();x.restore();}
     for(const prop of w.props){if(prop.searched)continue;const n=state.map.find(v=>v.id===prop.roomId);if(!n||n.type==='empty')continue;const i=img(art[n.type]||art.event),size=n.type==='boss'?48:n.type==='exit'?54:34,bob=Math.sin(time/450+prop.pulse)*2;if(['crate','rare','weapon','medical','exit'].includes(n.type)){x.save();x.globalAlpha=.16+.07*Math.sin(time/260+prop.pulse);x.fillStyle=n.type==='rare'?'#bc85ff':'#72d9ff';x.beginPath();x.ellipse(prop.x*T,prop.y*T+8,size*.48,size*.22,0,0,Math.PI*2);x.fill();x.restore();}if(i.complete)x.drawImage(i,prop.x*T-size/2,prop.y*T-size/2+bob,size,size);}
     const actor=(a,src,size,facing)=>{const i=img(src);x.save();x.translate(a.x*T,a.y*T);x.scale(facing,1);if(i.complete)x.drawImage(i,-size/2,-size*.72,size,size);x.restore();};
     w.enemies.forEach(e=>{
       if(!e.active)return;
       const frames=ENEMY_FRAMES[enemyKind(e)],moving=e.path.length>0&&state.mode==='roaming';
       const pose=time<e.hitUntil?5:time<e.poseUntil?4:moving?1+Math.floor(time/130)%3:0;
+      const alertColor=e.alert==='engaging'?'#ff6f70':e.alert==='investigating'?'#ffd166':'#73d7ff';
+      const pulse=1+Math.sin(time/180)*.08,range=e.alert==='patrol'?3.2:e.alert==='investigating'?5.2:6.6;
+      x.save();x.globalAlpha=e.alert==='patrol'?.13:e.alert==='investigating'?.2:.28;x.strokeStyle=alertColor;x.lineWidth=2;x.beginPath();x.arc(e.x*T,e.y*T-8,range*T*pulse,0,Math.PI*2);x.stroke();x.restore();
       if(time<e.poseUntil){x.save();x.globalAlpha=.25+.15*Math.sin(time/55);x.strokeStyle='#ff776e';x.lineWidth=2;x.beginPath();x.arc(e.x*T,e.y*T-13,23,0,Math.PI*2);x.stroke();x.restore();}
       actor(e,frames[pose],58,e.facing);
+      x.save();x.font='800 10px system-ui, sans-serif';x.textAlign='center';x.fillStyle=alertColor;x.strokeStyle='rgba(0,0,0,.75)';x.lineWidth=3;const label=e.alert==='engaging'?'ENGAGE':e.alert==='investigating'?'ALERT':'PATROL';x.strokeText(label,e.x*T,e.y*T-54);x.fillText(label,e.x*T,e.y*T-54);x.restore();
       if(state.combat?.enemy?.sourceId===e.id&&state.combat.enemy.bossFight)drawBossDetails(x,e,state.combat.enemy,time);
     });
     const breedKey=activeBreedKey();
@@ -264,10 +287,10 @@
     for(const particle of w.particles){x.save();x.globalAlpha=Math.max(0,particle.life/particle.max);x.fillStyle=particle.color;x.beginPath();x.arc(particle.x*T,particle.y*T,particle.size,0,Math.PI*2);x.fill();x.restore();}
     x.fillStyle=p[2];x.globalAlpha=.94;for(let y=0;y<H;y++)for(let xx=0;xx<W;xx++)if(!w.seen.has(K(xx,y)))x.fillRect(xx*T,y*T,T+1,T+1);x.globalAlpha=1;x.restore();
     const vignette=x.createRadialGradient(c.width/2,c.height/2,c.height*.22,c.width/2,c.height/2,c.width*.68);vignette.addColorStop(0,'rgba(0,0,0,0)');vignette.addColorStop(1,'rgba(2,7,10,.38)');x.fillStyle=vignette;x.fillRect(0,0,c.width,c.height);
-    const o=$('map')?.querySelector('.world-progress');if(o)o.textContent=`${w.searched}/${w.props.filter(v=>state.map.find(n=>n.id===v.roomId)?.type!=='base').length} searched · ${w.enemies.filter(v=>v.active).length} hostiles`;
+    const o=$('map')?.querySelector('.world-progress');if(o){const alerts=w.enemies.filter(v=>v.active&&v.alert!=='patrol').length;o.textContent=`${w.searched}/${w.props.filter(v=>state.map.find(n=>n.id===v.roomId)?.type!=='base').length} searched · ${w.enemies.filter(v=>v.active).length} hostiles${alerts?` · ${alerts} alerted`:''}`;}
   }
   function audit(){
-    const w=state.world;if(!w?.ready)return{ready:false};const start={x:Math.floor(w.dog.x),y:Math.floor(w.dog.y)},q=[start],seen=new Set([K(start.x,start.y)]);while(q.length){const c=q.shift();for(const n of neighbours(w,c.x,c.y))if(!seen.has(K(n.x,n.y))){seen.add(K(n.x,n.y));q.push(n);}}const count=w.tiles.flat().filter(Boolean).length,term=w.props.find(v=>{const n=state.map.find(x=>x.id===v.roomId);return['boss','exit'].includes(n?.type);});return{ready:true,layoutKind:w.kind,chambers:w.rooms.length,floorCount:count,reachableFloorCount:seen.size,connected:seen.size===count,terminalReachable:!!term&&path(w,start,term).length>0,propsOnFloor:w.props.every(v=>floor(w,Math.floor(v.x),Math.floor(v.y))),dogOnFloor:floor(w,Math.floor(w.dog.x),Math.floor(w.dog.y)),cameraInBounds:w.camera.x>=0&&w.camera.x<=W-VW&&w.camera.y>=0&&w.camera.y<=H-VH,directionsSeen:[...(w.directionsSeen||[])]};}
+    const w=state.world;if(!w?.ready)return{ready:false};const start={x:Math.floor(w.dog.x),y:Math.floor(w.dog.y)},q=[start],seen=new Set([K(start.x,start.y)]);while(q.length){const c=q.shift();for(const n of neighbours(w,c.x,c.y))if(!seen.has(K(n.x,n.y))){seen.add(K(n.x,n.y));q.push(n);}}const count=w.tiles.flat().filter(Boolean).length,term=w.props.find(v=>{const n=state.map.find(x=>x.id===v.roomId);return['boss','exit'].includes(n?.type);});return{ready:true,layoutKind:w.kind,chambers:w.rooms.length,floorCount:count,reachableFloorCount:seen.size,connected:seen.size===count,terminalReachable:!!term&&path(w,start,term).length>0,propsOnFloor:w.props.every(v=>floor(w,Math.floor(v.x),Math.floor(v.y))),dogOnFloor:floor(w,Math.floor(w.dog.x),Math.floor(w.dog.y)),cameraInBounds:w.camera.x>=0&&w.camera.x<=W-VW&&w.camera.y>=0&&w.camera.y<=H-VH,directionsSeen:[...(w.directionsSeen||[])],enemyAlerts:w.enemies.reduce((acc,e)=>{if(e.active)acc[e.alert||'patrol']=(acc[e.alert||'patrol']||0)+1;return acc;},{})};}
   function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(state.world?.ready){update(state.world,dt);draw(now);}frame=requestAnimationFrame(loop);}
   generateMap=function(seed){baseGenerate(seed);build();};
   generateRoamingEnemies=spawn;updateRoamingEnemies=function(){};

@@ -1,4 +1,11 @@
-# Bark Raiders v0.36
+# Bark Raiders v0.37
+
+## v0.37 Raid Readability and Enemy Intent
+
+- Upgraded the raid map summary into a compact field HUD with current objective, route progress, and hostile alert status.
+- Enemies now patrol, investigate, and engage based on awareness, line of sight, distance, and hearing instead of instantly snapping into combat.
+- Added visible route guidance, enemy alert rings, and patrol/alert/engage labels to make raids easier to read while still moving.
+- Expanded world audit data with enemy alert counts for smoke tests and future bug sweeps.
 
 ## v0.36 Directional Movement and Floor Progression
 

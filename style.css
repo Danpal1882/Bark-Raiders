@@ -1416,6 +1416,9 @@ html[data-theme] .panel {
   .dog-loadout-stage img { animation:none; }
 }
 
+/* v0.37 raid readability and enemy intent HUD */
+.danger-summary-v37 { color:#ffd0c9; }
+
 
 /* v0.17 floor progression and injury UI */
 #progressStatus .gear span {
