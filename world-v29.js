@@ -10,7 +10,7 @@
     base:'assets/sprites/v34/loot/03-06.png',crate:'assets/sprites/v34/loot/01-01.png',tree:'assets/tile-tree.svg',
     grove:'assets/tile-grove.svg',food:'assets/sprites/v34/loot/01-04.png',water:'assets/sprites/v34/loot/01-05.png',
     scrap:'assets/sprites/v34/loot/01-06.png',medical:'assets/sprites/v34/loot/01-03.png',weapon:'assets/sprites/v34/loot/02-01.png',
-    event:'assets/tile-event.svg',exit:'assets/tile-event.svg',trader:'assets/sprites/v34/loot/03-04.png',
+    event:'assets/tile-event.svg',exit:'assets/sprites/v36/floor-exit.svg',trader:'assets/sprites/v34/loot/03-04.png',
     enemy:'assets/tile-enemy.svg',rare:'assets/sprites/v34/loot/02-03.png',boss:'assets/sprites/v34/loot/02-03.png',
   };
   const cache=new Map();
@@ -25,6 +25,9 @@
     'assets/sprites/v34/dog/05.png','assets/sprites/v34/dog/06.png',
     'assets/sprites/v34/dog/07.png','assets/sprites/v34/dog/08.png',
   ];
+  const SHIBA_DIRECTIONAL=Object.fromEntries(['down','left','up','right'].map(direction=>[
+    direction,Array.from({length:4},(_,i)=>`assets/sprites/v36/dog/${direction}/${String(i+1).padStart(2,'0')}.svg`)
+  ]));
   const BREED_FRAMES=Object.fromEntries(['jack','collie','dachshund','pom','bulldog','lab','greyhound'].map(key=>[
     key,Array.from({length:5},(_,i)=>`assets/sprites/v34/breeds/${key}/${String(i+1).padStart(2,'0')}.png`)
   ]));
@@ -146,10 +149,10 @@
   }
   function reveal(w,x,y,d=5){for(let yy=Math.floor(y)-d;yy<=y+d;yy++)for(let xx=Math.floor(x)-d;xx<=x+d;xx++)if(inside(xx,yy)&&Math.hypot(xx-x,yy-y)<=d+.5)w.seen.add(K(xx,yy));}
   function build(){
-    const r=rng(`${state.mapSeed}-world-v29`),w={tiles:Array.from({length:H},()=>Array(W).fill(0)),rooms:[],nodeRooms:[],props:[],enemies:[],projectiles:[],particles:[],dog:{x:2,y:2,path:[],target:null,facing:1,poseUntil:0,hitUntil:0,trailAt:0},camera:{x:0,y:0,shakeUntil:0,shakePower:0},seen:new Set(),searched:0,ready:true};
+    const r=rng(`${state.mapSeed}-world-v29`),w={tiles:Array.from({length:H},()=>Array(W).fill(0)),rooms:[],nodeRooms:[],props:[],enemies:[],projectiles:[],particles:[],dog:{x:2,y:2,path:[],target:null,facing:1,direction:'down',poseUntil:0,hitUntil:0,trailAt:0},camera:{x:0,y:0,shakeUntil:0,shakePower:0},seen:new Set(),searched:0,ready:true};
     layout(w,r);
     const entrance=state.map.find(v=>v.role==='entrance')||state.map[0],terminal=state.map.find(v=>['boss','exit'].includes(v.type)||['boss','exit'].includes(v.role));
-    const start=w.rooms.reduce((a,b)=>a.cx+a.cy<b.cx+b.cy?a:b,w.rooms[0]),finish=w.rooms.reduce((a,b)=>Math.abs(b.cx-start.cx)+Math.abs(b.cy-start.cy)>Math.abs(a.cx-start.cx)+Math.abs(a.cy-start.cy)?b:a,w.rooms[0]);
+    const start=w.rooms.reduce((a,b)=>Math.hypot(a.cx-W/2,a.cy-H/2)<Math.hypot(b.cx-W/2,b.cy-H/2)?a:b,w.rooms[0]),finish=w.rooms.reduce((a,b)=>Math.abs(b.cx-start.cx)+Math.abs(b.cy-start.cy)>Math.abs(a.cx-start.cx)+Math.abs(a.cy-start.cy)?b:a,w.rooms[0]);
     const available=w.rooms.filter(v=>v!==start&&v!==finish);state.map.forEach((node,i)=>{const rr=node===entrance?start:node===terminal?finish:available[i%available.length];w.nodeRooms[node.id]=rr;const x=rr.x+1+Math.floor(r()*Math.max(1,rr.w-2)),y=rr.y+1+Math.floor(r()*Math.max(1,rr.h-2));w.props.push({roomId:node.id,x:x+.5,y:y+.5,searched:node.cleared,pulse:r()*6});});
     w.dog.x=start.cx+.5;w.dog.y=start.cy+.5;reveal(w,w.dog.x,w.dog.y);state.world=w;return w;
   }
@@ -170,7 +173,7 @@
   function update(w,dt){
     if(!state.running||state.mode!=='roaming')return;
     if(!w.dog.path.length){if(search(w))return;const p=target(w);if(p){w.dog.target=p;w.dog.path=path(w,w.dog,p);}else endRaid(true);}
-    const n=w.dog.path[0];if(n){const dx=n.x-w.dog.x,dy=n.y-w.dog.y,d=Math.hypot(dx,dy),speed=1.45+state.dog.speed*.22;w.dog.facing=dx<0?-1:1;if(d<speed*dt){w.dog.x=n.x;w.dog.y=n.y;w.dog.path.shift();reveal(w,w.dog.x,w.dog.y,5);search(w);}else{w.dog.x+=dx/d*speed*dt;w.dog.y+=dy/d*speed*dt;}if(performance.now()-w.dog.trailAt>155){w.dog.trailAt=performance.now();w.particles.push({x:w.dog.x-w.dog.facing*.16,y:w.dog.y+.22,vx:(Math.random()-.5)*.18,vy:-.08-Math.random()*.12,life:.45,max:.45,color:keyDust(),size:1.5+Math.random()});}}
+    const n=w.dog.path[0];if(n){if(!floor(w,Math.floor(n.x),Math.floor(n.y))){w.dog.path=[];w.dog.target=null;return;}const dx=n.x-w.dog.x,dy=n.y-w.dog.y,d=Math.hypot(dx,dy),speed=1.45+state.dog.speed*.22;if(Math.abs(dx)>Math.abs(dy)){w.dog.direction=dx<0?'left':'right';w.dog.facing=dx<0?-1:1;}else if(Math.abs(dy)>.02)w.dog.direction=dy<0?'up':'down';w.directionsSeen=w.directionsSeen||new Set();w.directionsSeen.add(w.dog.direction);if(d<speed*dt){if(floor(w,Math.floor(n.x),Math.floor(n.y))){w.dog.x=n.x;w.dog.y=n.y;}w.dog.path.shift();reveal(w,w.dog.x,w.dog.y,5);search(w);}else{const nextX=w.dog.x+dx/d*speed*dt,nextY=w.dog.y+dy/d*speed*dt;if(floor(w,Math.floor(nextX),Math.floor(nextY))){w.dog.x=clamp(nextX,.5,W-.5);w.dog.y=clamp(nextY,.5,H-.5);}else w.dog.path=[];}if(performance.now()-w.dog.trailAt>155){w.dog.trailAt=performance.now();w.particles.push({x:w.dog.x-w.dog.facing*.16,y:w.dog.y+.22,vx:(Math.random()-.5)*.18,vy:-.08-Math.random()*.12,life:.45,max:.45,color:keyDust(),size:1.5+Math.random()});}}
     for(const e of w.enemies){
       const source=state.roamEnemies.find(v=>v.id===e.id);
       if(!e.active||source?.active===false){e.active=false;continue;}
@@ -189,7 +192,7 @@
     const map=$('map');if(!map)return;let c=map.querySelector('#raidWorldCanvas');if(!c){map.innerHTML='';c=document.createElement('canvas');c.id='raidWorldCanvas';c.width=VW*T;c.height=VH*T;map.appendChild(c);const o=document.createElement('div');o.className='world-overlay';o.innerHTML='<span class="world-mode">AUTO SCAVENGE</span><span class="world-progress"></span>';map.appendChild(o);}return c;
   }
   function draw(time=performance.now()){
-    const w=state.world,c=canvas();if(!w?.ready||!c)return;const x=c.getContext('2d'),key=biomeKey(),p=palettes[key]||palettes.city,camX=clamp(w.dog.x-VW/2,0,W-VW),camY=clamp(w.dog.y-VH/2,0,H-VH);w.camera.x+=(camX-w.camera.x)*.24;w.camera.y+=(camY-w.camera.y)*.24;const shaking=time<w.camera.shakeUntil&&!document.body.classList.contains('reduce-motion'),shakeX=shaking?(Math.random()-.5)*w.camera.shakePower:0,shakeY=shaking?(Math.random()-.5)*w.camera.shakePower:0;x.clearRect(0,0,c.width,c.height);x.save();x.translate(-w.camera.x*T+shakeX,-w.camera.y*T+shakeY);
+    const w=state.world,c=canvas();if(!w?.ready||!c)return;const x=c.getContext('2d'),key=biomeKey(),p=palettes[key]||palettes.city,camX=clamp(w.dog.x-VW/2,0,W-VW),camY=clamp(w.dog.y-VH/2,0,H-VH);w.camera.x=camX;w.camera.y=camY;const shaking=time<w.camera.shakeUntil&&!document.body.classList.contains('reduce-motion'),shakeX=shaking?(Math.random()-.5)*w.camera.shakePower:0,shakeY=shaking?(Math.random()-.5)*w.camera.shakePower:0;x.clearRect(0,0,c.width,c.height);x.save();x.translate(-w.camera.x*T+shakeX,-w.camera.y*T+shakeY);
     for(let y=0;y<H;y++)for(let xx=0;xx<W;xx++){
       x.fillStyle=floor(w,xx,y)?((xx+y)%2?p[0]:p[1]):p[2];x.fillRect(xx*T,y*T,T,T);
       if(floor(w,xx,y)){
@@ -220,7 +223,7 @@
         if(image.complete)x.save(),x.globalAlpha=.72,x.drawImage(image,xx*T-4,y*T-8,T+8,T+8),x.restore();
       }
     }
-    for(const prop of w.props){if(prop.searched)continue;const n=state.map.find(v=>v.id===prop.roomId);if(!n||n.type==='empty')continue;const i=img(art[n.type]||art.event),size=n.type==='boss'?48:34,bob=Math.sin(time/450+prop.pulse)*2;if(['crate','rare','weapon','medical'].includes(n.type)){x.save();x.globalAlpha=.16+.07*Math.sin(time/260+prop.pulse);x.fillStyle=n.type==='rare'?'#bc85ff':'#72d9ff';x.beginPath();x.ellipse(prop.x*T,prop.y*T+8,size*.48,size*.22,0,0,Math.PI*2);x.fill();x.restore();}if(i.complete)x.drawImage(i,prop.x*T-size/2,prop.y*T-size/2+bob,size,size);}
+    for(const prop of w.props){if(prop.searched)continue;const n=state.map.find(v=>v.id===prop.roomId);if(!n||n.type==='empty')continue;const i=img(art[n.type]||art.event),size=n.type==='boss'?48:n.type==='exit'?54:34,bob=Math.sin(time/450+prop.pulse)*2;if(['crate','rare','weapon','medical','exit'].includes(n.type)){x.save();x.globalAlpha=.16+.07*Math.sin(time/260+prop.pulse);x.fillStyle=n.type==='rare'?'#bc85ff':'#72d9ff';x.beginPath();x.ellipse(prop.x*T,prop.y*T+8,size*.48,size*.22,0,0,Math.PI*2);x.fill();x.restore();}if(i.complete)x.drawImage(i,prop.x*T-size/2,prop.y*T-size/2+bob,size,size);}
     const actor=(a,src,size,facing)=>{const i=img(src);x.save();x.translate(a.x*T,a.y*T);x.scale(facing,1);if(i.complete)x.drawImage(i,-size/2,-size*.72,size,size);x.restore();};
     w.enemies.forEach(e=>{
       if(!e.active)return;
@@ -233,8 +236,13 @@
     const breedKey=activeBreedKey();
     if(breedKey==='shiba'){
       const moving=w.dog.path.length>0&&state.mode==='roaming';
-      const pose=time<w.dog.hitUntil?6:time<w.dog.poseUntil?5:moving?1+Math.floor(time/120)%4:0;
-      actor(w.dog,SHIBA_FRAMES[pose],72,w.dog.facing);
+      if(moving||time>=w.dog.poseUntil&&time>=w.dog.hitUntil){
+        const direction=w.dog.direction||'down',frames=SHIBA_DIRECTIONAL[direction]||SHIBA_DIRECTIONAL.down;
+        actor(w.dog,frames[moving?Math.floor(time/120)%4:0],72,1);
+      }else{
+        const pose=time<w.dog.hitUntil?6:5;
+        actor(w.dog,SHIBA_FRAMES[pose],72,w.dog.facing);
+      }
     }else if(BREED_FRAMES[breedKey]){
       const moving=w.dog.path.length>0&&state.mode==='roaming';
       actor(w.dog,BREED_FRAMES[breedKey][moving?1+Math.floor(time/125)%4:0],70,w.dog.facing);
@@ -259,7 +267,7 @@
     const o=$('map')?.querySelector('.world-progress');if(o)o.textContent=`${w.searched}/${w.props.filter(v=>state.map.find(n=>n.id===v.roomId)?.type!=='base').length} searched · ${w.enemies.filter(v=>v.active).length} hostiles`;
   }
   function audit(){
-    const w=state.world;if(!w?.ready)return{ready:false};const start={x:Math.floor(w.dog.x),y:Math.floor(w.dog.y)},q=[start],seen=new Set([K(start.x,start.y)]);while(q.length){const c=q.shift();for(const n of neighbours(w,c.x,c.y))if(!seen.has(K(n.x,n.y))){seen.add(K(n.x,n.y));q.push(n);}}const count=w.tiles.flat().filter(Boolean).length,term=w.props.find(v=>{const n=state.map.find(x=>x.id===v.roomId);return['boss','exit'].includes(n?.type);});return{ready:true,layoutKind:w.kind,chambers:w.rooms.length,floorCount:count,reachableFloorCount:seen.size,connected:seen.size===count,terminalReachable:!!term&&path(w,start,term).length>0,propsOnFloor:w.props.every(v=>floor(w,Math.floor(v.x),Math.floor(v.y)))};}
+    const w=state.world;if(!w?.ready)return{ready:false};const start={x:Math.floor(w.dog.x),y:Math.floor(w.dog.y)},q=[start],seen=new Set([K(start.x,start.y)]);while(q.length){const c=q.shift();for(const n of neighbours(w,c.x,c.y))if(!seen.has(K(n.x,n.y))){seen.add(K(n.x,n.y));q.push(n);}}const count=w.tiles.flat().filter(Boolean).length,term=w.props.find(v=>{const n=state.map.find(x=>x.id===v.roomId);return['boss','exit'].includes(n?.type);});return{ready:true,layoutKind:w.kind,chambers:w.rooms.length,floorCount:count,reachableFloorCount:seen.size,connected:seen.size===count,terminalReachable:!!term&&path(w,start,term).length>0,propsOnFloor:w.props.every(v=>floor(w,Math.floor(v.x),Math.floor(v.y))),dogOnFloor:floor(w,Math.floor(w.dog.x),Math.floor(w.dog.y)),cameraInBounds:w.camera.x>=0&&w.camera.x<=W-VW&&w.camera.y>=0&&w.camera.y<=H-VH,directionsSeen:[...(w.directionsSeen||[])]};}
   function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(state.world?.ready){update(state.world,dt);draw(now);}frame=requestAnimationFrame(loop);}
   generateMap=function(seed){baseGenerate(seed);build();};
   generateRoamingEnemies=spawn;updateRoamingEnemies=function(){};
@@ -271,7 +279,7 @@
     const dogShot=side==='dog',profile=dogShot?weaponProfile():enemyProfile(enemy.template);
     if(profile.width<=0)return;
     const from=dogShot?w.dog:enemy,to=dogShot?enemy:w.dog,distance=dist(from,to);
-    if(dogShot){w.dog.facing=to.x<from.x?-1:1;w.dog.poseUntil=performance.now()+300;enemy.hitUntil=performance.now()+260;}
+    if(dogShot){w.dog.facing=to.x<from.x?-1:1;w.dog.direction=Math.abs(to.x-from.x)>Math.abs(to.y-from.y)?(to.x<from.x?'left':'right'):(to.y<from.y?'up':'down');w.dog.poseUntil=performance.now()+300;enemy.hitUntil=performance.now()+260;}
     else{enemy.poseUntil=performance.now()+420;w.dog.hitUntil=performance.now()+260;}
     w.camera.shakeUntil=performance.now()+(dogShot?110:180);w.camera.shakePower=dogShot?2.2:4;
     const muzzle=dogShot?w.dog:enemy,impact=dogShot?enemy:w.dog;
@@ -289,6 +297,6 @@
     if(/Crow|Barnstorm/.test(name)){ctx.strokeStyle='#8bdcff';ctx.shadowColor='#8bdcff';ctx.beginPath();ctx.moveTo(-28,-5);ctx.lineTo(-13,-17);ctx.moveTo(28,-5);ctx.lineTo(13,-17);ctx.stroke();}
     ctx.restore();
   }
-  window.worldV29={rebuild:()=>{build();spawn();render();},state:()=>state.world,audit,fireProjectile,weaponProfile,enemyProfile,lineOfSight};
+  window.worldV29={rebuild:()=>{build();spawn();render();},state:()=>state.world,tick:dt=>{if(state.world?.ready){update(state.world,dt);draw(performance.now());}},audit,fireProjectile,weaponProfile,enemyProfile,lineOfSight};
   if(state.map?.length)build();cancelAnimationFrame(frame);frame=requestAnimationFrame(loop);render();
 })();

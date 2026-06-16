@@ -14,14 +14,11 @@
     let distance=Math.hypot(enemy.x-dog.x,enemy.y-dog.y);
     const notes=[];
 
+    const exchangeRange=Math.min(distance,Math.max(1.5,Math.min(dogWeapon.range,enemyWeapon.range)));
     if(distance>dogWeapon.range){
-      const step=Math.min(.9,distance-dogWeapon.range+.1);
-      dog.x+=(enemy.x-dog.x)/distance*step;
-      dog.y+=(enemy.y-dog.y)/distance*step;
-      dog.facing=enemy.x<dog.x?-1:1;
-      notes.push(`${state.dog.name} closes to firing range.`);
-      distance=Math.hypot(enemy.x-dog.x,enemy.y-dog.y);
-    }else{
+      notes.push(`${state.dog.name} fires from cover at the edge of effective range.`);
+    }
+    {
       const shot=window.gearV32?.fireWeapon?.(combatEnemy);
       if(shot?.reload){
         notes.push(`${state.dog.name} reloads ${shot.weapon.name}.`);
@@ -43,16 +40,8 @@
     }
 
     bossMechanic(combatEnemy,notes);
-    distance=Math.hypot(enemy.x-dog.x,enemy.y-dog.y);
-    if(distance>enemyWeapon.range){
-      const step=Math.min(1.45,distance-enemyWeapon.range+.1);
-      enemy.x+=(dog.x-enemy.x)/distance*step;
-      enemy.y+=(dog.y-enemy.y)/distance*step;
-      enemy.facing=dog.x<enemy.x?-1:1;
-      notes.push(`${combatEnemy.name} advances.`);
-      distance=Math.hypot(enemy.x-dog.x,enemy.y-dog.y);
-    }
-    if(distance<=enemyWeapon.range){
+    distance=exchangeRange;
+    {
       window.setTimeout(()=>window.worldV29.fireProjectile('enemy'),180);
       const dodgeChance=Math.min(28,state.dog.speed*4+(state.research.bossMap&&combatEnemy.bossFight?3:0));
       if(Math.random()*100<dodgeChance) notes.push(`${state.dog.name} dodges the shot.`);
