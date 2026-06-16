@@ -1,4 +1,12 @@
-# Bark Raiders v0.38
+# Bark Raiders v0.39
+
+## v0.39 Gear 2.0 and Boss Sweep
+
+- Surfaced the modern gear system with active weapon stats, average equipped condition, repair cost, and one-click equipped-item repairs.
+- Added inventory comparison text so new guns, armour, packs, helmets, and charms are easier to judge against the current loadout.
+- Recorded raid gear finds for the post-raid debrief and raid history so equipment rewards no longer disappear into the stash silently.
+- Added boss identity intel for all twelve biome bosses, including prep advice, weaknesses, unique reward names, and combat counterplay notes.
+- Added a `gameplayV39.bossSweepAudit()` debug hook to verify boss identities, unique drops, boss-floor rules, active gear slots, and repairable equipment.
 
 ## v0.38 Core Raid Loop and Post-Raid Clarity
 
