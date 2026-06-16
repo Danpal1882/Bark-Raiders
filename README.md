@@ -1,4 +1,10 @@
-# Bark Raiders v0.37
+# Bark Raiders v0.38
+
+## v0.38 Core Raid Loop and Post-Raid Clarity
+
+- Rebuilt the post-raid modal into a clearer mission debrief with outcome, loot, injuries, progress, timeline, and recommended next run.
+- Added richer raid-history entries so recent raids show the route outcome and follow-up instead of just raw loot.
+- Preserved extra raid context for future loop decisions such as continue/extract prompts and route recommendations.
 
 ## v0.37 Raid Readability and Enemy Intent
 

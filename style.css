@@ -1419,6 +1419,76 @@ html[data-theme] .panel {
 /* v0.37 raid readability and enemy intent HUD */
 .danger-summary-v37 { color:#ffd0c9; }
 
+/* v0.38 post-raid clarity and loop debrief */
+.raid-debrief-v38 { display:grid; gap:14px; }
+.debrief-hero-v38 {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:16px;
+  border:1px solid rgba(124,232,212,.22);
+  border-radius:18px;
+  background:linear-gradient(135deg,rgba(18,52,60,.88),rgba(8,24,32,.9));
+}
+.raid-debrief-v38.fail .debrief-hero-v38 {
+  border-color:rgba(255,111,112,.28);
+  background:linear-gradient(135deg,rgba(54,24,28,.88),rgba(18,24,32,.92));
+}
+.debrief-hero-v38 h3 { margin:3px 0; font-size:1.45rem; }
+.debrief-hero-v38 p { margin:0; color:var(--muted); }
+.debrief-hero-v38 > strong {
+  border-radius:999px;
+  padding:8px 12px;
+  background:rgba(255,255,255,.08);
+  color:#b9fff3;
+}
+.raid-debrief-v38.fail .debrief-hero-v38 > strong { color:#ffd0c9; }
+.eyebrow-v38 {
+  color:var(--accent-2);
+  font-size:.68rem;
+  font-weight:1000;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.debrief-grid-v38,
+.raid-timeline-v38 {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(180px,1fr));
+  gap:10px;
+}
+.debrief-grid-v38 article,
+.raid-timeline-v38 article,
+.next-run-v38 {
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:14px;
+  padding:12px;
+  background:rgba(255,255,255,.045);
+}
+.debrief-grid-v38 strong,
+.raid-timeline-v38 strong,
+.next-run-v38 strong {
+  display:block;
+  color:var(--accent);
+  margin-bottom:5px;
+}
+.debrief-grid-v38 span,
+.raid-timeline-v38 span,
+.next-run-v38 span { color:var(--muted); line-height:1.35; }
+.next-run-v38 {
+  border-color:rgba(255,200,94,.26);
+  background:linear-gradient(135deg,rgba(255,200,94,.09),rgba(255,255,255,.04));
+}
+.history-row small {
+  color:var(--muted);
+  font-size:.68rem;
+  font-weight:800;
+}
+@media(max-width:720px){
+  .debrief-hero-v38 { align-items:flex-start; flex-direction:column; }
+  .debrief-grid-v38,.raid-timeline-v38 { grid-template-columns:1fr; }
+}
+
 
 /* v0.17 floor progression and injury UI */
 #progressStatus .gear span {
