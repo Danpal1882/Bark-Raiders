@@ -1,4 +1,12 @@
-# Bark Raiders v0.41
+# Bark Raiders v0.42
+
+## v0.42 Combat Sync and Portrait Hotfix
+
+- Fixed world enemy HP syncing so damage appears on both the combat card and the map enemy during fights.
+- Cleaned up defeated roaming enemies immediately so cleared hostiles do not keep appearing as active targets.
+- Grounded map actors lower on their tile to reduce the floating look introduced in v0.41.
+- Swapped combat/hero portraits to the newer v34 dog and enemy sprite frames where available.
+- Added `gameplayV42.audit()` for combat HP and portrait smoke tests.
 
 ## v0.41 Raid Readability and Smoother Movement
 
