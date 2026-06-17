@@ -249,11 +249,12 @@
       if(!e.active)return;
       const frames=ENEMY_FRAMES[enemyKind(e)],moving=e.path.length>0&&state.mode==='roaming';
       const pose=time<e.hitUntil?5:time<e.poseUntil?4:moving?1+Math.floor(time/190)%3:0;
+      const resolvedEnemyFrame=window.spriteV43?.enemyMapFrame?.(e.template||e,Math.floor(time/210)%4,time<e.hitUntil);
       const alertColor=e.alert==='engaging'?'#ff6f70':e.alert==='investigating'?'#ffd166':'#73d7ff';
       const pulse=1+Math.sin(time/180)*.08,range=e.alert==='patrol'?3.2:e.alert==='investigating'?5.2:6.6;
       x.save();x.globalAlpha=e.alert==='patrol'?.13:e.alert==='investigating'?.2:.28;x.strokeStyle=alertColor;x.lineWidth=2;x.beginPath();x.arc(e.x*T,e.y*T-8,range*T*pulse,0,Math.PI*2);x.stroke();x.restore();
       if(time<e.poseUntil){x.save();x.globalAlpha=.25+.15*Math.sin(time/55);x.strokeStyle='#ff776e';x.lineWidth=2;x.beginPath();x.arc(e.x*T,e.y*T-13,23,0,Math.PI*2);x.stroke();x.restore();}
-      actor(e,frames[pose],58,e.facing,{bob:moving?Math.sin(time/190)*1.1:0,scaleY:moving?1+Math.sin(time/190)*.015:1});
+      actor(e,resolvedEnemyFrame||frames[pose],58,e.facing,{bob:moving?Math.sin(time/190)*1.1:0,scaleY:moving?1+Math.sin(time/190)*.015:1});
       x.save();x.font='800 10px system-ui, sans-serif';x.textAlign='center';x.fillStyle=alertColor;x.strokeStyle='rgba(0,0,0,.75)';x.lineWidth=3;const label=e.alert==='engaging'?'ENGAGE':e.alert==='investigating'?'ALERT':'PATROL';x.strokeText(label,e.x*T,e.y*T-54);x.fillText(label,e.x*T,e.y*T-54);x.restore();
       if(state.combat?.enemy?.sourceId===e.id&&state.combat.enemy.bossFight)drawBossDetails(x,e,state.combat.enemy,time);
     });
@@ -264,14 +265,17 @@
         const direction=w.dog.direction||'down',frames=SHIBA_DIRECTIONAL[direction]||SHIBA_DIRECTIONAL.down;
         const step=moving?WALK_FRAMES[Math.floor(time/210)%WALK_FRAMES.length]:0;
         const footBob=moving?Math.sin(time/210*Math.PI*2)*.9:0;
-        actor(w.dog,frames[step]||frames[0],72,1,{bob:footBob,scaleY:moving?1+Math.sin(time/210*Math.PI*2)*.012:1});
+        const resolvedDogFrame=window.spriteV43?.dogMapFrame?.('shiba',direction,step);
+        actor(w.dog,resolvedDogFrame||frames[step]||frames[0],72,1,{bob:footBob,scaleY:moving?1+Math.sin(time/210*Math.PI*2)*.012:1});
       }else{
         const pose=time<w.dog.hitUntil?6:5;
         actor(w.dog,SHIBA_FRAMES[pose],72,w.dog.facing,{bob:0});
       }
     }else if(BREED_FRAMES[breedKey]){
       const moving=w.dog.path.length>0&&state.mode==='roaming';
-      actor(w.dog,BREED_FRAMES[breedKey][moving?1+Math.floor(time/210)%4:0],70,w.dog.facing,{bob:moving?Math.sin(time/210*Math.PI*2)*.9:0});
+      const step=moving?Math.floor(time/210)%4:0;
+      const resolvedDogFrame=window.spriteV43?.dogMapFrame?.(breedKey,w.dog.direction||'down',step);
+      actor(w.dog,resolvedDogFrame||BREED_FRAMES[breedKey][moving?1+step:0],70,w.dog.facing,{bob:moving?Math.sin(time/210*Math.PI*2)*.9:0});
     }else actor(w.dog,state.dog.sprite,48,w.dog.facing);
     w.projectiles=w.projectiles.filter(projectile=>{
       const elapsed=time-projectile.started,progress=clamp(elapsed/projectile.duration,0,1);
