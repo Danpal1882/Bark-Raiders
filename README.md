@@ -1,4 +1,12 @@
-# Bark Raiders v0.43
+# Bark Raiders v0.44
+
+## v0.44 Stat and Weapon Balance Pass
+
+- Added `gameplay-v44.js` as a conservative balance adapter over the modern gear system.
+- Reconciled visible Attack and Defence with the active modern weapon, armour, condition, and breed bonuses.
+- Normalised weapon firing rules by class so pistols, SMGs, shotguns, rifles, and machine guns have clearer trade-offs.
+- Updated Alpha Hound's weak-weapon check to respect modern weapon power instead of only legacy Attack.
+- Added `balanceV44.audit()` for future bug sweeps, including weapon power, armour defence, and estimated enemy rounds-to-kill.
 
 ## v0.43 Sprite Resolver and Presentation Consolidation
 
