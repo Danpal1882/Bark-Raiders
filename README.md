@@ -1,4 +1,12 @@
-# Bark Raiders v0.42
+# Bark Raiders v0.43
+
+## v0.43 Sprite Resolver and Presentation Consolidation
+
+- Added a central sprite resolver so hero, combat, creator, roster, map dogs, and map enemies use the same newer sprite families.
+- Replaced remaining visible old raider/enemy SVG fallbacks on core UI surfaces with v34/v36 sprite assets.
+- Routed world-map dog and enemy frames through the same resolver used by the UI.
+- Added internal sprite resolver markers for easier visual debugging during playtests.
+- Added `gameplayV43.audit()` to detect old visible SVG fallbacks and confirm resolver coverage.
 
 ## v0.42 Combat Sync and Portrait Hotfix
 
