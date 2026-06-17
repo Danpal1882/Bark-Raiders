@@ -1,4 +1,12 @@
-# Bark Raiders v0.39
+# Bark Raiders v0.40
+
+## v0.40 Field Tasks and Raid Texture
+
+- Added a bonus field task at the start of each raid, with progress shown above the map and a small reward when completed.
+- Added biome-specific ambience and loot-room descriptions so city, sewer, factory, and farmland runs feel more distinct.
+- Added trader/event contact tracking, enemy defeat tracking, cache-search tracking, and biome-supply sample objectives.
+- Added field highlights to the post-raid debrief and raid history so each run has a short story recap.
+- Added `gameplayV40.audit()` for smoke tests and future bug sweeps.
 
 ## v0.39 Gear 2.0 and Boss Sweep
 
