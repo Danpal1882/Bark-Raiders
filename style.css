@@ -2062,3 +2062,98 @@ html[data-theme] .panel {
     text-align: left;
   }
 }
+
+/* v0.41 raid readability and low-chrome play view */
+.view-toggle-v41 {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.view-toggle-v41 button {
+  padding: 8px 11px;
+}
+.view-toggle-v41 button.active {
+  border-color: rgba(126,221,255,.45);
+  background: linear-gradient(135deg, rgba(126,221,255,.2), rgba(255,217,112,.08));
+  color: #f8fbff;
+}
+.raid-focus-v41 .compact-hero {
+  display: none;
+}
+.raid-focus-v41 .dashboard-grid.active {
+  grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+  align-items: start;
+}
+.raid-focus-v41 .right-panel {
+  display: none;
+}
+.raid-focus-v41 .setup-panel {
+  position: sticky;
+  top: 10px;
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+}
+.raid-focus-v41 .setup-panel .compact-fields,
+.raid-focus-v41 .setup-panel .compact-details,
+.raid-focus-v41 .setup-panel .compact-stat-grid {
+  display: none;
+}
+.raid-focus-v41 .setup-panel .status-box {
+  padding: 10px;
+}
+.raid-focus-v41 .setup-panel .status-box p:nth-child(2),
+.raid-focus-v41 .setup-panel .status-box p:nth-child(3) {
+  display: none;
+}
+.raid-focus-v41 .compact-bars {
+  gap: 5px;
+}
+.raid-focus-v41 .map-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, .8fr);
+  gap: 12px;
+  align-items: start;
+}
+.raid-focus-v41 .dashboard-map-panel,
+.raid-focus-v41 .compact-combat {
+  min-height: 0;
+}
+.raid-focus-v41 .map {
+  min-height: min(72vh, 680px);
+}
+.raid-focus-v41 #raidWorldCanvas {
+  width: 100%;
+  height: auto;
+}
+.raid-focus-v41 .choice-panel {
+  grid-column: 1 / -1;
+}
+.combat-visible-v41 .combat-panel {
+  border-color: rgba(255,217,112,.36);
+  box-shadow: 0 0 0 1px rgba(255,217,112,.12), 0 16px 34px rgba(0,0,0,.24);
+}
+.combat-visible-v41 .combat-stage {
+  background:
+    radial-gradient(circle at 28% 45%, rgba(126,221,255,.16), transparent 34%),
+    radial-gradient(circle at 72% 45%, rgba(255,121,94,.16), transparent 34%),
+    rgba(255,255,255,.035);
+  border-radius: 18px;
+}
+@media (max-width: 1120px) {
+  .raid-focus-v41 .dashboard-grid.active,
+  .raid-focus-v41 .map-column {
+    grid-template-columns: 1fr;
+  }
+  .raid-focus-v41 .setup-panel {
+    position: static;
+  }
+}
+@media (max-width: 760px) {
+  .view-toggle-v41 {
+    width: 100%;
+    margin-left: 0;
+  }
+  .view-toggle-v41 button {
+    flex: 1;
+  }
+}

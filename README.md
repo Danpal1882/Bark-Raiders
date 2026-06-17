@@ -1,4 +1,12 @@
-# Bark Raiders v0.40
+# Bark Raiders v0.41
+
+## v0.41 Raid Readability and Smoother Movement
+
+- Smoothed the raid-map walk cadence so the dog uses a slower foot-cycle instead of a lunge-like frame loop.
+- Added combat spotlighting through fog so active fights reveal both combatants and their firing line.
+- Added a Raid Focus / Loadout Detail toggle so the raid screen can prioritise map, combat, and objective information over admin panels.
+- Reduced persistent raid UI density while keeping base, gear, market, and stats available from tabs or detail mode.
+- Added `gameplayV41.audit()` for visibility and UI smoke tests.
 
 ## v0.40 Field Tasks and Raid Texture
 
