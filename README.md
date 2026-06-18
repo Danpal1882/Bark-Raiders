@@ -1,4 +1,13 @@
-# Bark Raiders v0.44
+# Bark Raiders v0.45
+
+## v0.45 Balance Matrix and Loadout Intel
+
+- Added `gameplay-v45.js` to tune stale saved/starter weapons against the current modern weapon table.
+- Added a loadout intel card above Gear & Equipment with weapon power, hit chance, average rounds-to-kill, ammo pressure, boss readiness, and armour-reduced incoming damage.
+- Loadout intel now follows the selected pre-raid biome immediately and gives a short route-prep recommendation.
+- Added extra weapon stat chips in inventory cards for power, hit chance, average enemy TTK, and boss TTK.
+- Added `balanceV45.audit()` with a full weapon-by-zone matrix for future balance sweeps.
+- Kept the UI compact so balance information supports raid prep without turning the screen back into a spreadsheet.
 
 ## v0.44 Stat and Weapon Balance Pass
 
