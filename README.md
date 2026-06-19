@@ -1,4 +1,12 @@
-# Bark Raiders v0.46
+# Bark Raiders v0.47
+
+## v0.47 First-Raid Guidance and Debrief Polish
+
+- Added a compact raid guide card that explains the first run, changes advice during active raids and combat, and can be hidden after the player understands the loop.
+- Captured end-of-run HP, ammo, carry, and loot context before the raid resets so the post-raid report can give practical next-step advice.
+- Added a clearer debrief recommendation card for recovery, ammo pressure, full packs, floor progress, boss clears, and empty-loot runs.
+- Enriched raid history with the same next-step guidance so old runs are more useful when deciding what to do next.
+- Added `gameplayV47.audit()` for local and live smoke tests.
 
 ## v0.46 Animation and Combat Readability
 

@@ -2062,6 +2062,9 @@ html[data-theme] .panel {
 .history-gear-v39 {
   color: #7eddff;
 }
+.history-next-v47 {
+  color: #b8f5d0;
+}
 @media (max-width: 760px) {
   .gear-maintenance-v39 {
     align-items: stretch;
@@ -2146,6 +2149,102 @@ html[data-theme] .panel {
   .field-task-card-v40 small {
     max-width: none;
     text-align: left;
+  }
+}
+
+/* v0.47 first-raid guidance and debrief polish */
+.first-raid-guide-v47 {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 12px;
+  padding: 14px;
+  border: 1px solid rgba(126,221,255,.26);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(126,221,255,.18), transparent 36%),
+    linear-gradient(135deg, rgba(39,119,124,.22), rgba(255,217,112,.06));
+  box-shadow: 0 14px 30px rgba(0,0,0,.2);
+}
+.first-raid-guide-v47 div {
+  display: grid;
+  gap: 5px;
+}
+.first-raid-guide-v47 strong,
+.debrief-next-v47 strong {
+  color: #f8fbff;
+  font-size: 1.02rem;
+}
+.first-raid-guide-v47 p,
+.debrief-next-v47 p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.first-raid-guide-v47 ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.first-raid-guide-v47 li,
+.debrief-metrics-v47 span {
+  padding: 6px 9px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 999px;
+  background: rgba(255,255,255,.055);
+  color: #dce8e8;
+  font-size: .78rem;
+  font-weight: 800;
+}
+.guide-tag-v47 {
+  width: max-content;
+  padding: 4px 8px;
+  border: 1px solid rgba(255,217,112,.28);
+  border-radius: 999px;
+  background: rgba(255,217,112,.09);
+  color: #ffd970;
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.guide-dismiss-v47 {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+.debrief-next-v47 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(220px, .75fr);
+  gap: 14px;
+  margin-top: 12px;
+  padding: 15px;
+  border: 1px solid rgba(118,227,154,.26);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 5% 0%, rgba(118,227,154,.18), transparent 34%),
+    linear-gradient(135deg, rgba(126,221,255,.11), rgba(255,255,255,.045));
+}
+.debrief-next-v47 > div {
+  display: grid;
+  gap: 6px;
+}
+.debrief-metrics-v47 {
+  align-content: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 760px) {
+  .first-raid-guide-v47,
+  .debrief-next-v47 {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+  .guide-dismiss-v47 {
+    width: 100%;
   }
 }
 
