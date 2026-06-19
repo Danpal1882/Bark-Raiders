@@ -1,4 +1,12 @@
-# Bark Raiders v0.45
+# Bark Raiders v0.46
+
+## v0.46 Animation and Combat Readability
+
+- Smoothed raid-map walking by switching the dog to a four-step walk loop and reducing the vertical bob that made movement look like lunging.
+- Updated breed map-frame ordering so non-Shiba dogs alternate foot poses more naturally.
+- Added combat feedback flashes and floating hit/miss/reload/clear text so damage and enemy defeat are easier to read.
+- Reinforced combat visibility by refreshing the fog reveal and actor hit timers during fights.
+- Added `gameplayV46.audit()` for walking-frame and combat-feedback smoke tests.
 
 ## v0.45 Balance Matrix and Loadout Intel
 
