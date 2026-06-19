@@ -14,7 +14,7 @@
     enemy:'assets/tile-enemy.svg',rare:'assets/sprites/v34/loot/02-03.png',boss:'assets/sprites/v34/loot/02-03.png',
   };
   const cache=new Map();
-  const WALK_FRAMES=[0,1,0,2];
+  const WALK_FRAMES=[0,1,2,3];
   let frame=0,last=performance.now(),baseGenerate=generateMap,baseMove=moveDog;
   const K=(x,y)=>`${x},${y}`;
   const inside=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
@@ -264,18 +264,18 @@
       if(moving||time>=w.dog.poseUntil&&time>=w.dog.hitUntil){
         const direction=w.dog.direction||'down',frames=SHIBA_DIRECTIONAL[direction]||SHIBA_DIRECTIONAL.down;
         const step=moving?WALK_FRAMES[Math.floor(time/210)%WALK_FRAMES.length]:0;
-        const footBob=moving?Math.sin(time/210*Math.PI*2)*.9:0;
+        const footBob=moving?Math.sin(time/260*Math.PI*2)*.28:0;
         const resolvedDogFrame=window.spriteV43?.dogMapFrame?.('shiba',direction,step);
-        actor(w.dog,resolvedDogFrame||frames[step]||frames[0],72,1,{bob:footBob,scaleY:moving?1+Math.sin(time/210*Math.PI*2)*.012:1});
+        actor(w.dog,resolvedDogFrame||frames[step]||frames[0],72,1,{bob:footBob,scaleY:moving?1+Math.sin(time/260*Math.PI*2)*.004:1});
       }else{
         const pose=time<w.dog.hitUntil?6:5;
         actor(w.dog,SHIBA_FRAMES[pose],72,w.dog.facing,{bob:0});
       }
     }else if(BREED_FRAMES[breedKey]){
       const moving=w.dog.path.length>0&&state.mode==='roaming';
-      const step=moving?Math.floor(time/210)%4:0;
+      const step=moving?Math.floor(time/260)%4:0;
       const resolvedDogFrame=window.spriteV43?.dogMapFrame?.(breedKey,w.dog.direction||'down',step);
-      actor(w.dog,resolvedDogFrame||BREED_FRAMES[breedKey][moving?1+step:0],70,w.dog.facing,{bob:moving?Math.sin(time/210*Math.PI*2)*.9:0});
+      actor(w.dog,resolvedDogFrame||BREED_FRAMES[breedKey][moving?1+step:0],70,w.dog.facing,{bob:moving?Math.sin(time/260*Math.PI*2)*.24:0,scaleY:moving?1+Math.sin(time/260*Math.PI*2)*.003:1});
     }else actor(w.dog,state.dog.sprite,48,w.dog.facing);
     w.projectiles=w.projectiles.filter(projectile=>{
       const elapsed=time-projectile.started,progress=clamp(elapsed/projectile.duration,0,1);
