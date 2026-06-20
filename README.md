@@ -1,4 +1,12 @@
-# Bark Raiders v0.47
+# Bark Raiders v0.50
+
+## v0.50 Playable Session Milestone
+
+- Added a compact v0.5 session-goals panel so the first play session has clear short-term objectives and rewards.
+- Added a Comfort Run button that prepares a safe starter route, Safe Auto-Extract, Pest Control, faster tick speed, and a small ammo buffer.
+- Applied safer first-run defaults on fresh saves so new players start with Safe Sniff, Pest Control, and Safe Auto-Extract instead of wandering into avoidable pain.
+- Added session progress to post-raid reports so every run points back into the bank-upgrade-raid loop.
+- Added `gameplayV50.audit()` for smoke tests before publishing.
 
 ## v0.47 First-Raid Guidance and Debrief Polish
 
