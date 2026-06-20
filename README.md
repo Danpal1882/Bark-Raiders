@@ -1,4 +1,11 @@
-# Bark Raiders v0.51
+# Bark Raiders v0.52
+
+## v0.52 Safe Extract Checkbox
+
+- Replaced the forced Safe Auto-Extract behaviour with a clear `Use Safe Extract` checkbox and explanation.
+- Safe Extract is still recommended for idle play, but players can untick it for riskier hands-on runs.
+- Kept the simplified raid setup and route focus buttons while avoiding the old aggressive/balanced/greedy dropdown.
+- Added `gameplayV52.audit()` for smoke tests.
 
 ## v0.51 Idle Raid Setup Cleanup
 
