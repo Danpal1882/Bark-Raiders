@@ -1,4 +1,12 @@
-# Bark Raiders v0.50
+# Bark Raiders v0.51
+
+## v0.51 Idle Raid Setup Cleanup
+
+- Simplified the raid setup around idle play by hiding the old plan/profile/auto-extract admin controls.
+- Safe Auto-Extract now stays enabled as the main loop default, including when older saves had it disabled.
+- Added a small Idle Mode panel with simple route focuses: Safe Run, Wood, Scrap, and Meds.
+- Kept the underlying raid plans for save compatibility and existing systems while removing the busy decision load from the main UI.
+- Added `gameplayV51.audit()` for smoke tests.
 
 ## v0.50 Playable Session Milestone
 
