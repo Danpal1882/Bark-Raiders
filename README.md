@@ -1,4 +1,11 @@
-# Bark Raiders v0.52
+# Bark Raiders v0.53
+
+## v0.53 Springy Long-Dog Easter Egg
+
+- Added a subtle toy-box Easter egg inspired by a spring-bodied long dog, without using protected character names.
+- Rare event and cache routes can reveal the `Springy Long-Dog Charm`, a unique charm that boosts rare finds and extraction safety.
+- Added a tiny post-raid callout when the Easter egg has been found.
+- Added `gameplayV53.audit()` for smoke tests.
 
 ## v0.52 Safe Extract Checkbox
 
