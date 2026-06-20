@@ -63,3 +63,27 @@
     font-size: .55rem;
   }
 }
+
+/* v0.54 responsive map sizing */
+@media (max-width: 760px) {
+  #map.map {
+    min-height: min(58vh, 520px);
+    aspect-ratio: auto;
+  }
+  #raidWorldCanvas {
+    height: min(58vh, 520px);
+    min-height: 360px;
+    object-fit: cover;
+  }
+}
+@media (min-width: 761px) and (max-width: 1120px) {
+  #map.map {
+    min-height: min(68vh, 650px);
+    aspect-ratio: auto;
+  }
+  #raidWorldCanvas {
+    height: min(68vh, 650px);
+    min-height: 520px;
+    object-fit: cover;
+  }
+}

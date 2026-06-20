@@ -2423,6 +2423,33 @@ html[data-theme] .panel {
 .spring-easter-v53 span {
   color: var(--muted);
 }
+.mobile-raid-dock-v54 {
+  display: none;
+}
+.mobile-raid-bars-v54 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.mobile-raid-bars-v54 span {
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 999px;
+  background: rgba(0,0,0,.28);
+}
+.mobile-raid-bars-v54 b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff867d, var(--danger));
+}
+.mobile-raid-bars-v54 b.ammo {
+  background: linear-gradient(90deg, #9fdcff, var(--blue));
+}
+.mobile-raid-bars-v54 b.carry {
+  background: linear-gradient(90deg, #f7cb64, var(--accent));
+}
 .idle-route-v51 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2451,6 +2478,206 @@ html[data-theme] .panel {
   }
   .idle-route-v51 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* v0.54 mobile and tablet playability */
+@media (max-width: 760px) {
+  body {
+    overflow-x: hidden;
+  }
+  .app {
+    width: 100%;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+  .panel {
+    border-radius: 14px;
+    padding: 10px;
+  }
+  .compact-hero {
+    display: none;
+  }
+  .top-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    margin: 0 0 8px;
+    padding: 7px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-radius: 16px;
+    background: rgba(12,27,36,.94);
+    backdrop-filter: blur(10px);
+  }
+  .top-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .top-tabs .tab-btn,
+  .view-toggle-v41 button,
+  button,
+  select,
+  .safe-extract-v52 {
+    min-height: 44px;
+  }
+  .top-tabs .tab-btn {
+    flex: 0 0 auto;
+    min-width: 96px;
+    padding: 10px 12px;
+  }
+  .dashboard-grid.active {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .map-column {
+    order: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .setup-panel {
+    order: 2;
+  }
+  .right-panel {
+    order: 3;
+  }
+  .mobile-raid-dock-v54 {
+    position: sticky;
+    top: 64px;
+    z-index: 70;
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid rgba(126,221,255,.24);
+    border-radius: 16px;
+    background: rgba(13,31,40,.94);
+    box-shadow: 0 12px 28px rgba(0,0,0,.28);
+    backdrop-filter: blur(10px);
+  }
+  .mobile-raid-status-v54 {
+    display: grid;
+    gap: 2px;
+  }
+  .mobile-raid-status-v54 strong {
+    color: #f8fbff;
+  }
+  .mobile-raid-status-v54 span {
+    color: var(--muted);
+    font-size: .78rem;
+  }
+  .mobile-raid-actions-v54 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 7px;
+  }
+  .mobile-raid-actions-v54 button {
+    padding: 10px 8px;
+  }
+  .dashboard-map-panel {
+    padding: 8px;
+  }
+  .dashboard-map-panel .panel-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .first-raid-guide-v47,
+  .field-task-card-v40 {
+    margin-bottom: 8px;
+    padding: 10px;
+  }
+  .first-raid-guide-v47 ol {
+    display: none;
+  }
+  .dashboard-map-panel .map,
+  .map {
+    min-height: min(58vh, 520px);
+    border-radius: 14px;
+  }
+  .dungeon-meta {
+    top: 8px;
+    right: 8px;
+    max-width: 58%;
+  }
+  .dungeon-meta span,
+  .room-label {
+    font-size: .55rem;
+  }
+  .poi {
+    width: 34px;
+    height: 34px;
+  }
+  .poi.enemy,
+  .poi.boss,
+  .poi.trader {
+    width: 42px;
+    height: 42px;
+  }
+  .map-dog {
+    width: 48px;
+    height: 48px;
+  }
+  .map-roamer {
+    width: 42px;
+    height: 42px;
+  }
+  .compact-combat {
+    order: 3;
+  }
+  .combat-panel .combat-stage {
+    grid-template-columns: 1fr;
+  }
+  .fighter-card .combat-sprite {
+    width: 72px;
+    height: 72px;
+  }
+  .setup-panel .compact-fields {
+    grid-template-columns: 1fr;
+  }
+  .setup-panel .compact-details:not([open]) {
+    padding-bottom: 0;
+  }
+  .session-list-v50 article:nth-child(n+3) {
+    display: none;
+  }
+  .right-panel details {
+    margin-bottom: 8px;
+  }
+  .right-panel details:not([open]) > :not(summary) {
+    display: none;
+  }
+  .resources,
+  .gear-grid,
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .modal-card {
+    width: min(100%, calc(100vw - 16px));
+    max-height: calc(100dvh - 20px);
+    overflow: auto;
+    padding: 12px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1120px) {
+  .app {
+    width: min(100% - 18px, 1120px);
+  }
+  .dashboard-grid {
+    grid-template-columns: minmax(220px, .7fr) minmax(0, 1.3fr);
+  }
+  .right-panel {
+    grid-column: 1 / -1;
+    max-height: none;
+  }
+  .right-panel details {
+    display: inline-block;
+    width: min(48%, 420px);
+    vertical-align: top;
+    margin-right: 8px;
+  }
+  .dashboard-map-panel .map {
+    min-height: min(68vh, 650px);
   }
 }
 
@@ -2570,4 +2797,35 @@ html[data-theme] .panel {
   border-radius: 14px;
   background: radial-gradient(circle at 50% 70%, rgba(126,221,255,.14), transparent 55%);
   filter: drop-shadow(0 8px 10px rgba(0,0,0,.28));
+}
+
+/* v0.54 final responsive overrides kept at the end of the cascade */
+@media (max-width: 760px) {
+  .dashboard-map-panel .map,
+  .map {
+    min-height: min(58vh, 520px);
+  }
+  .dashboard-map-panel .first-raid-guide-v47 {
+    display: none;
+  }
+}
+@media (min-width: 761px) and (max-width: 1120px) {
+  .dashboard-grid.active {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .map-column {
+    order: 1;
+  }
+  .setup-panel {
+    order: 2;
+  }
+  .right-panel {
+    order: 3;
+  }
+  .dashboard-map-panel .map,
+  .map {
+    min-height: min(68vh, 650px);
+  }
 }

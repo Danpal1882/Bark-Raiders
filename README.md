@@ -1,4 +1,12 @@
-# Bark Raiders v0.53
+# Bark Raiders v0.54
+
+## v0.54 Mobile and Tablet Playability
+
+- Added a mobile raid dock with Start, Extract, Auto-Raid, and compact HP/ammo/carry bars.
+- Reordered the raid screen on phones so the map and combat stay ahead of admin panels.
+- Improved mobile touch targets, sticky tabs, safe-area padding, and modal sizing.
+- Tuned phone and tablet map/combat/panel sizing so the playfield keeps priority.
+- Added `gameplayV54.audit()` for responsive smoke tests.
 
 ## v0.53 Springy Long-Dog Easter Egg
 
